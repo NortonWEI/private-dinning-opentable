@@ -1,7 +1,11 @@
 package com.opentable.privatedining.model;
 
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class Space {
 
     private UUID id;
@@ -17,38 +21,6 @@ public class Space {
         this.id = UUID.randomUUID();
         this.name = name;
         this.minCapacity = minCapacity;
-        this.maxCapacity = maxCapacity;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getMinCapacity() {
-        return minCapacity;
-    }
-
-    public void setMinCapacity(Integer minCapacity) {
-        this.minCapacity = minCapacity;
-    }
-
-    public Integer getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(Integer maxCapacity) {
         this.maxCapacity = maxCapacity;
     }
 }

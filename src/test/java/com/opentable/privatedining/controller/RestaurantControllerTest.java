@@ -1,5 +1,16 @@
 package com.opentable.privatedining.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opentable.privatedining.dto.RestaurantDTO;
 import com.opentable.privatedining.dto.SpaceDTO;
@@ -8,6 +19,10 @@ import com.opentable.privatedining.mapper.SpaceMapper;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.service.RestaurantService;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +30,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RestaurantController.class)
 class RestaurantControllerTest {
@@ -52,22 +56,24 @@ class RestaurantControllerTest {
         Restaurant restaurant2 = new Restaurant("Restaurant 2", "Address 2", "French", 30);
         List<Restaurant> restaurants = Arrays.asList(restaurant1, restaurant2);
 
-        RestaurantDTO restaurantDTO1 = new RestaurantDTO("1", "Restaurant 1", "Address 1", "Italian", 50, Arrays.asList());
-        RestaurantDTO restaurantDTO2 = new RestaurantDTO("2", "Restaurant 2", "Address 2", "French", 30, Arrays.asList());
+        RestaurantDTO restaurantDTO1 = new RestaurantDTO("1", "Restaurant 1", "Address 1", "Italian", 50,
+            Arrays.asList());
+        RestaurantDTO restaurantDTO2 = new RestaurantDTO("2", "Restaurant 2", "Address 2", "French", 30,
+            Arrays.asList());
 
         when(restaurantService.getAllRestaurants()).thenReturn(restaurants);
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(restaurantDTO1).thenReturn(restaurantDTO2);
 
         // When & Then
         mockMvc.perform(get("/v1/restaurants"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Restaurant 1"))
-                .andExpect(jsonPath("$[0].address").value("Address 1"))
-                .andExpect(jsonPath("$[0].cuisineType").value("Italian"))
-                .andExpect(jsonPath("$[0].capacity").value(50))
-                .andExpect(jsonPath("$[1].name").value("Restaurant 2"));
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].name").value("Restaurant 1"))
+            .andExpect(jsonPath("$[0].address").value("Address 1"))
+            .andExpect(jsonPath("$[0].cuisineType").value("Italian"))
+            .andExpect(jsonPath("$[0].capacity").value(50))
+            .andExpect(jsonPath("$[1].name").value("Restaurant 2"));
     }
 
     @Test
@@ -77,19 +83,20 @@ class RestaurantControllerTest {
         Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 40);
         restaurant.setId(restaurantId);
 
-        RestaurantDTO restaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant", "Test Address", "Test Cuisine", 40, Arrays.asList());
+        RestaurantDTO restaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant", "Test Address",
+            "Test Cuisine", 40, Arrays.asList());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(restaurantDTO);
 
         // When & Then
         mockMvc.perform(get("/v1/restaurants/" + restaurantId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Test Restaurant"))
-                .andExpect(jsonPath("$.address").value("Test Address"))
-                .andExpect(jsonPath("$.cuisineType").value("Test Cuisine"))
-                .andExpect(jsonPath("$.capacity").value(40));
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.name").value("Test Restaurant"))
+            .andExpect(jsonPath("$.address").value("Test Address"))
+            .andExpect(jsonPath("$.cuisineType").value("Test Cuisine"))
+            .andExpect(jsonPath("$.capacity").value(40));
     }
 
     @Test
@@ -100,14 +107,14 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(get("/v1/restaurants/" + restaurantId.toString()))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void getRestaurantById_WhenInvalidId_ShouldReturn400() throws Exception {
         // When & Then
         mockMvc.perform(get("/v1/restaurants/invalid-id"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -117,7 +124,8 @@ class RestaurantControllerTest {
         Restaurant restaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
         Restaurant savedRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
         savedRestaurant.setId(new ObjectId());
-        RestaurantDTO savedRestaurantDTO = new RestaurantDTO(savedRestaurant.getId().toString(), "New Restaurant", "New Address", "New Cuisine", 60, Arrays.asList());
+        RestaurantDTO savedRestaurantDTO = new RestaurantDTO(savedRestaurant.getId().toString(), "New Restaurant",
+            "New Address", "New Cuisine", 60, Arrays.asList());
 
         when(restaurantMapper.toModel(any(RestaurantDTO.class))).thenReturn(restaurant);
         when(restaurantService.createRestaurant(any(Restaurant.class))).thenReturn(savedRestaurant);
@@ -125,38 +133,41 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(post("/v1/restaurants")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputRestaurantDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("New Restaurant"))
-                .andExpect(jsonPath("$.address").value("New Address"))
-                .andExpect(jsonPath("$.cuisineType").value("New Cuisine"))
-                .andExpect(jsonPath("$.capacity").value(60));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputRestaurantDTO)))
+            .andExpect(status().isCreated())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.name").value("New Restaurant"))
+            .andExpect(jsonPath("$.address").value("New Address"))
+            .andExpect(jsonPath("$.cuisineType").value("New Cuisine"))
+            .andExpect(jsonPath("$.capacity").value(60));
     }
 
     @Test
     void updateRestaurant_WhenRestaurantExists_ShouldReturnUpdatedRestaurant() throws Exception {
         // Given
         ObjectId restaurantId = new ObjectId();
-        RestaurantDTO inputRestaurantDTO = new RestaurantDTO("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
+        RestaurantDTO inputRestaurantDTO = new RestaurantDTO("Updated Restaurant", "Updated Address", "Updated Cuisine",
+            70);
         Restaurant restaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
         Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
         updatedRestaurant.setId(restaurantId);
-        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Updated Restaurant", "Updated Address", "Updated Cuisine", 70, Arrays.asList());
+        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Updated Restaurant",
+            "Updated Address", "Updated Cuisine", 70, Arrays.asList());
 
         when(restaurantMapper.toModel(any(RestaurantDTO.class))).thenReturn(restaurant);
-        when(restaurantService.updateRestaurant(eq(restaurantId), any(Restaurant.class))).thenReturn(Optional.of(updatedRestaurant));
+        when(restaurantService.updateRestaurant(eq(restaurantId), any(Restaurant.class))).thenReturn(
+            Optional.of(updatedRestaurant));
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(updatedRestaurantDTO);
 
         // When & Then
         mockMvc.perform(put("/v1/restaurants/" + restaurantId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputRestaurantDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Updated Restaurant"))
-                .andExpect(jsonPath("$.address").value("Updated Address"));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputRestaurantDTO)))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.name").value("Updated Restaurant"))
+            .andExpect(jsonPath("$.address").value("Updated Address"));
     }
 
     @Test
@@ -171,9 +182,9 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(put("/v1/restaurants/" + restaurantId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(restaurantDTO)))
-                .andExpect(status().isNotFound());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(restaurantDTO)))
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -183,9 +194,9 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(put("/v1/restaurants/invalid-id")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(restaurantDTO)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(restaurantDTO)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -196,7 +207,7 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/" + restaurantId.toString()))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -207,14 +218,14 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/" + restaurantId.toString()))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void deleteRestaurant_WhenInvalidId_ShouldReturn400() throws Exception {
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/invalid-id"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -228,22 +239,24 @@ class RestaurantControllerTest {
         updatedRestaurant.getSpaces().add(space);
 
         SpaceDTO returnedSpaceDTO = new SpaceDTO(UUID.randomUUID(), "Private Room", 2, 10);
-        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant", "Test Address", "Test Cuisine", 50, Arrays.asList(returnedSpaceDTO));
+        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant",
+            "Test Address", "Test Cuisine", 50, Arrays.asList(returnedSpaceDTO));
 
         when(spaceMapper.toModel(any(SpaceDTO.class))).thenReturn(space);
-        when(restaurantService.addSpaceToRestaurant(eq(restaurantId), any(Space.class))).thenReturn(Optional.of(updatedRestaurant));
+        when(restaurantService.addSpaceToRestaurant(eq(restaurantId), any(Space.class))).thenReturn(
+            Optional.of(updatedRestaurant));
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(updatedRestaurantDTO);
 
         // When & Then
         mockMvc.perform(post("/v1/restaurants/" + restaurantId.toString() + "/spaces")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(spaceDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.spaces.length()").value(1))
-                .andExpect(jsonPath("$.spaces[0].name").value("Private Room"))
-                .andExpect(jsonPath("$.spaces[0].minCapacity").value(2))
-                .andExpect(jsonPath("$.spaces[0].maxCapacity").value(10));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(spaceDTO)))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.spaces.length()").value(1))
+            .andExpect(jsonPath("$.spaces[0].name").value("Private Room"))
+            .andExpect(jsonPath("$.spaces[0].minCapacity").value(2))
+            .andExpect(jsonPath("$.spaces[0].maxCapacity").value(10));
     }
 
     @Test
@@ -258,9 +271,9 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(post("/v1/restaurants/" + restaurantId.toString() + "/spaces")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(spaceDTO)))
-                .andExpect(status().isNotFound());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(spaceDTO)))
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -270,9 +283,9 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(post("/v1/restaurants/invalid-id/spaces")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(spaceDTO)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(spaceDTO)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -282,16 +295,18 @@ class RestaurantControllerTest {
         UUID spaceId = UUID.randomUUID();
         Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
         updatedRestaurant.setId(restaurantId);
-        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant", "Test Address", "Test Cuisine", 50, Arrays.asList());
+        RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant",
+            "Test Address", "Test Cuisine", 50, Arrays.asList());
 
-        when(restaurantService.removeSpaceFromRestaurant(restaurantId, spaceId)).thenReturn(Optional.of(updatedRestaurant));
+        when(restaurantService.removeSpaceFromRestaurant(restaurantId, spaceId)).thenReturn(
+            Optional.of(updatedRestaurant));
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(updatedRestaurantDTO);
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/" + restaurantId.toString() + "/spaces/" + spaceId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Test Restaurant"));
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.name").value("Test Restaurant"));
     }
 
     @Test
@@ -304,7 +319,7 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/" + restaurantId.toString() + "/spaces/" + spaceId.toString()))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
@@ -314,7 +329,7 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/invalid-id/spaces/" + spaceId.toString()))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -324,6 +339,6 @@ class RestaurantControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/restaurants/" + restaurantId.toString() + "/spaces/invalid-uuid"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 }

@@ -5,14 +5,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.model.Restaurant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Component
 public class DataLoader implements ApplicationRunner {
@@ -27,8 +26,8 @@ public class DataLoader implements ApplicationRunner {
     public void run(ApplicationArguments args) throws Exception {
         var yaml = new ClassPathResource("init-db.yml");
 
-        if(mongoTemplate.collectionExists(Restaurant.class)
-                || mongoTemplate.collectionExists(Reservation.class)) {
+        if (mongoTemplate.collectionExists(Restaurant.class)
+            || mongoTemplate.collectionExists(Reservation.class)) {
             return;
         }
 

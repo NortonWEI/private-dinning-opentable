@@ -1,16 +1,26 @@
 package com.opentable.privatedining.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opentable.privatedining.dto.ReservationDTO;
 import com.opentable.privatedining.exception.GlobalExceptionHandler;
 import com.opentable.privatedining.exception.InvalidPartySizeException;
-import com.opentable.privatedining.exception.ReservationConflictException;
-import com.opentable.privatedining.exception.ReservationNotFoundException;
-import com.opentable.privatedining.exception.RestaurantNotFoundException;
-import com.opentable.privatedining.exception.SpaceNotFoundException;
 import com.opentable.privatedining.mapper.ReservationMapper;
 import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.service.ReservationService;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,18 +28,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest({ReservationController.class, GlobalExceptionHandler.class})
 class ReservationControllerTest {
@@ -61,13 +59,13 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(get("/v1/reservations"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].customerEmail").value("customer1@example.com"))
-                .andExpect(jsonPath("$[0].partySize").value(4))
-                .andExpect(jsonPath("$[1].customerEmail").value("customer2@example.com"))
-                .andExpect(jsonPath("$[1].partySize").value(6));
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].customerEmail").value("customer1@example.com"))
+            .andExpect(jsonPath("$[0].partySize").value(4))
+            .andExpect(jsonPath("$[1].customerEmail").value("customer2@example.com"))
+            .andExpect(jsonPath("$[1].partySize").value(6));
     }
 
     @Test
@@ -85,10 +83,10 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(get("/v1/reservations/" + reservationId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.customerEmail").value("customer@example.com"))
-                .andExpect(jsonPath("$.partySize").value(4));
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.customerEmail").value("customer@example.com"))
+            .andExpect(jsonPath("$.partySize").value(4));
     }
 
     @Test
@@ -99,14 +97,14 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(get("/v1/reservations/" + reservationId.toString()))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void getReservationById_WhenInvalidId_ShouldReturn400() throws Exception {
         // When & Then
         mockMvc.perform(get("/v1/reservations/invalid-id"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -125,12 +123,12 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(post("/v1/reservations")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputReservationDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.customerEmail").value("customer@example.com"))
-                .andExpect(jsonPath("$.partySize").value(4));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputReservationDTO)))
+            .andExpect(status().isCreated())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.customerEmail").value("customer@example.com"))
+            .andExpect(jsonPath("$.partySize").value(4));
     }
 
     @Test
@@ -140,13 +138,14 @@ class ReservationControllerTest {
         Reservation reservation = createTestReservation("invalid@example.com", 4);
 
         when(reservationMapper.toModel(any(ReservationDTO.class))).thenReturn(reservation);
-        when(reservationService.createReservation(any(Reservation.class))).thenThrow(new InvalidPartySizeException(4, 2, 3));
+        when(reservationService.createReservation(any(Reservation.class))).thenThrow(
+            new InvalidPartySizeException(4, 2, 3));
 
         // When & Then
         mockMvc.perform(post("/v1/reservations")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputReservationDTO)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputReservationDTO)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -157,7 +156,7 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/reservations/" + reservationId.toString()))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
     @Test
@@ -168,14 +167,14 @@ class ReservationControllerTest {
 
         // When & Then
         mockMvc.perform(delete("/v1/reservations/" + reservationId.toString()))
-                .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound());
     }
 
     @Test
     void deleteReservation_WhenInvalidId_ShouldReturn400() throws Exception {
         // When & Then
         mockMvc.perform(delete("/v1/reservations/invalid-id"))
-                .andExpect(status().isBadRequest());
+            .andExpect(status().isBadRequest());
     }
 
     private Reservation createTestReservation(String customerEmail, int partySize) {

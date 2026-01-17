@@ -4,13 +4,11 @@ import com.opentable.privatedining.dto.RestaurantDTO;
 import com.opentable.privatedining.dto.SpaceDTO;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.bson.types.ObjectId;
+import org.springframework.stereotype.Component;
 
 @Component
 public class RestaurantMapper {
@@ -29,17 +27,19 @@ public class RestaurantMapper {
         List<SpaceDTO> spaceDTOs = new ArrayList<>();
         if (restaurant.getSpaces() != null) {
             spaceDTOs = restaurant.getSpaces().stream()
-                    .map(spaceMapper::toDTO)
-                    .collect(Collectors.toList());
+                .map(spaceMapper::toDTO)
+                .collect(Collectors.toList());
         }
 
         return new RestaurantDTO(
-                restaurant.getId() != null ? restaurant.getId().toString() : null,
-                restaurant.getName(),
-                restaurant.getAddress(),
-                restaurant.getCuisineType(),
-                restaurant.getCapacity(),
-                spaceDTOs
+            restaurant.getId() != null ? restaurant.getId().toString() : null,
+            restaurant.getName(),
+            restaurant.getAddress(),
+            restaurant.getCuisineType(),
+            restaurant.getCapacity(),
+            restaurant.getStartTime(),
+            restaurant.getEndTime(),
+            spaceDTOs
         );
     }
 
@@ -49,10 +49,12 @@ public class RestaurantMapper {
         }
 
         Restaurant restaurant = new Restaurant(
-                restaurantDTO.getName(),
-                restaurantDTO.getAddress(),
-                restaurantDTO.getCuisineType(),
-                restaurantDTO.getCapacity()
+            restaurantDTO.getName(),
+            restaurantDTO.getAddress(),
+            restaurantDTO.getCuisineType(),
+            restaurantDTO.getCapacity(),
+            restaurantDTO.getStartTime(),
+            restaurantDTO.getEndTime()
         );
 
         if (restaurantDTO.getId() != null && !restaurantDTO.getId().isEmpty()) {
@@ -65,8 +67,8 @@ public class RestaurantMapper {
 
         if (restaurantDTO.getSpaces() != null) {
             List<Space> spaces = restaurantDTO.getSpaces().stream()
-                    .map(spaceMapper::toModel)
-                    .collect(Collectors.toList());
+                .map(spaceMapper::toModel)
+                .collect(Collectors.toList());
             restaurant.setSpaces(spaces);
         }
 

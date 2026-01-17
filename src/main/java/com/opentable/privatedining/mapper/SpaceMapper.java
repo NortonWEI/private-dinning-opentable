@@ -12,10 +12,10 @@ public class SpaceMapper {
             return null;
         }
         return new SpaceDTO(
-                space.getId(),
-                space.getName(),
-                space.getMinCapacity(),
-                space.getMaxCapacity()
+            space.getId(),
+            space.getName(),
+            space.getMinCapacity(),
+            space.getMaxCapacity()
         );
     }
 
@@ -25,9 +25,9 @@ public class SpaceMapper {
         }
         // Space ID is always generated server-side, ignore any client-provided ID
         return new Space(
-                spaceDTO.getName(),
-                spaceDTO.getMinCapacity(),
-                spaceDTO.getMaxCapacity()
+            spaceDTO.getName(),
+            spaceDTO.getMinCapacity(),
+            spaceDTO.getMaxCapacity()
         );
     }
 }

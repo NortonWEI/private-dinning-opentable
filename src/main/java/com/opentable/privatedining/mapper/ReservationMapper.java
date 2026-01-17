@@ -14,13 +14,13 @@ public class ReservationMapper {
         }
 
         ReservationDTO dto = new ReservationDTO(
-                reservation.getRestaurantId() != null ? reservation.getRestaurantId().toString() : null,
-                reservation.getSpaceId(),
-                reservation.getCustomerEmail(),
-                reservation.getStartTime(),
-                reservation.getEndTime(),
-                reservation.getPartySize(),
-                reservation.getStatus()
+            reservation.getRestaurantId() != null ? reservation.getRestaurantId().toString() : null,
+            reservation.getSpaceId(),
+            reservation.getCustomerEmail(),
+            reservation.getStartTime(),
+            reservation.getEndTime(),
+            reservation.getPartySize(),
+            reservation.getStatus()
         );
 
         if (reservation.getId() != null) {

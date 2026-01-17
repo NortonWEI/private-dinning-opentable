@@ -1,7 +1,7 @@
 package com.opentable.privatedining.exception;
 
-import org.bson.types.ObjectId;
 import java.util.UUID;
+import org.bson.types.ObjectId;
 
 public class SpaceNotFoundException extends RuntimeException {
 

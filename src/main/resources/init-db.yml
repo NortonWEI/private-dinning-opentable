@@ -4,6 +4,8 @@ restaurants:
     address: Mark Street
     cuisineType: Italian
     capacity: 300
+    startTime: 10:00
+    endTime: 02:00
     spaces:
       - id: aa43ac6a-f8db-423e-be5b-ca91ba73c0e8
         name: CornerTable
@@ -27,6 +29,8 @@ restaurants:
     address: Heath Street
     cuisineType: French
     capacity: 300
+    startTime: 11:00
+    endTime: 23:00
     spaces:
       - id: e5000a52-ab2b-44b5-9872-9db86cfdd2ef
         name: CornerTable

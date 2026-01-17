@@ -14,14 +14,20 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.bson.types.ObjectId;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/restaurants")
@@ -32,7 +38,8 @@ public class RestaurantController {
     private final RestaurantMapper restaurantMapper;
     private final SpaceMapper spaceMapper;
 
-    public RestaurantController(RestaurantService restaurantService, RestaurantMapper restaurantMapper, SpaceMapper spaceMapper) {
+    public RestaurantController(RestaurantService restaurantService, RestaurantMapper restaurantMapper,
+        SpaceMapper spaceMapper) {
         this.restaurantService = restaurantService;
         this.restaurantMapper = restaurantMapper;
         this.spaceMapper = spaceMapper;
@@ -41,29 +48,29 @@ public class RestaurantController {
     @GetMapping
     @Operation(summary = "Get all restaurants", description = "Retrieve a list of all restaurants")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of restaurants",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class)))
+        content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class)))
     public List<RestaurantDTO> getAllRestaurants() {
         return restaurantService.getAllRestaurants()
-                .stream()
-                .map(restaurantMapper::toDTO)
-                .toList();
+            .stream()
+            .map(restaurantMapper::toDTO)
+            .toList();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get restaurant by ID", description = "Retrieve a restaurant by its unique identifier")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Restaurant found",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Restaurant not found")
+        @ApiResponse(responseCode = "200", description = "Restaurant found",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Restaurant not found")
     })
     public ResponseEntity<RestaurantDTO> getRestaurantById(
-            @Parameter(description = "ID of the restaurant to retrieve", required = true)
-            @PathVariable String id) {
+        @Parameter(description = "ID of the restaurant to retrieve", required = true)
+        @PathVariable String id) {
         try {
             ObjectId objectId = new ObjectId(id);
             Optional<Restaurant> restaurant = restaurantService.getRestaurantById(objectId);
             return restaurant.map(r -> ResponseEntity.ok(restaurantMapper.toDTO(r)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -72,13 +79,13 @@ public class RestaurantController {
     @PostMapping
     @Operation(summary = "Create new restaurant", description = "Create a new restaurant in the system")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Restaurant created successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid input")
+        @ApiResponse(responseCode = "201", description = "Restaurant created successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
+        @ApiResponse(responseCode = "400", description = "Invalid input")
     })
     public ResponseEntity<RestaurantDTO> createRestaurant(
-            @Parameter(description = "Restaurant object to be created", required = true)
-            @RequestBody RestaurantDTO restaurantDTO) {
+        @Parameter(description = "Restaurant object to be created", required = true)
+        @RequestBody RestaurantDTO restaurantDTO) {
         Restaurant restaurant = restaurantMapper.toModel(restaurantDTO);
         Restaurant savedRestaurant = restaurantService.createRestaurant(restaurant);
         return ResponseEntity.status(HttpStatus.CREATED).body(restaurantMapper.toDTO(savedRestaurant));
@@ -87,22 +94,22 @@ public class RestaurantController {
     @PutMapping("/{id}")
     @Operation(summary = "Update restaurant", description = "Update an existing restaurant by its ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Restaurant updated successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Restaurant not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format")
+        @ApiResponse(responseCode = "200", description = "Restaurant updated successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Restaurant not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid ID format")
     })
     public ResponseEntity<RestaurantDTO> updateRestaurant(
-            @Parameter(description = "ID of the restaurant to update", required = true)
-            @PathVariable String id,
-            @Parameter(description = "Updated restaurant object", required = true)
-            @RequestBody RestaurantDTO restaurantDTO) {
+        @Parameter(description = "ID of the restaurant to update", required = true)
+        @PathVariable String id,
+        @Parameter(description = "Updated restaurant object", required = true)
+        @RequestBody RestaurantDTO restaurantDTO) {
         try {
             ObjectId objectId = new ObjectId(id);
             Restaurant restaurant = restaurantMapper.toModel(restaurantDTO);
             Optional<Restaurant> updatedRestaurant = restaurantService.updateRestaurant(objectId, restaurant);
             return updatedRestaurant.map(r -> ResponseEntity.ok(restaurantMapper.toDTO(r)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -111,13 +118,13 @@ public class RestaurantController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete restaurant", description = "Delete a restaurant by its ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Restaurant deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Restaurant not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format")
+        @ApiResponse(responseCode = "204", description = "Restaurant deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "Restaurant not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid ID format")
     })
     public ResponseEntity<Void> deleteRestaurant(
-            @Parameter(description = "ID of the restaurant to delete", required = true)
-            @PathVariable String id) {
+        @Parameter(description = "ID of the restaurant to delete", required = true)
+        @PathVariable String id) {
         try {
             ObjectId objectId = new ObjectId(id);
             boolean deleted = restaurantService.deleteRestaurant(objectId);
@@ -130,22 +137,22 @@ public class RestaurantController {
     @PostMapping("/{id}/spaces")
     @Operation(summary = "Add space to restaurant", description = "Add a new space to a restaurant")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Space added successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Restaurant not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format")
+        @ApiResponse(responseCode = "200", description = "Space added successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Restaurant not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid ID format")
     })
     public ResponseEntity<RestaurantDTO> addSpaceToRestaurant(
-            @Parameter(description = "ID of the restaurant", required = true)
-            @PathVariable String id,
-            @Parameter(description = "Space object to be added", required = true)
-            @RequestBody SpaceDTO spaceDTO) {
+        @Parameter(description = "ID of the restaurant", required = true)
+        @PathVariable String id,
+        @Parameter(description = "Space object to be added", required = true)
+        @RequestBody SpaceDTO spaceDTO) {
         try {
             ObjectId objectId = new ObjectId(id);
             Space space = spaceMapper.toModel(spaceDTO);
             Optional<Restaurant> updatedRestaurant = restaurantService.addSpaceToRestaurant(objectId, space);
             return updatedRestaurant.map(r -> ResponseEntity.ok(restaurantMapper.toDTO(r)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -154,22 +161,22 @@ public class RestaurantController {
     @DeleteMapping("/{id}/spaces/{spaceId}")
     @Operation(summary = "Remove space from restaurant", description = "Remove a space from a restaurant")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Space removed successfully",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Restaurant or space not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format")
+        @ApiResponse(responseCode = "200", description = "Space removed successfully",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = RestaurantDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Restaurant or space not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid ID format")
     })
     public ResponseEntity<RestaurantDTO> removeSpaceFromRestaurant(
-            @Parameter(description = "ID of the restaurant", required = true)
-            @PathVariable String id,
-            @Parameter(description = "UUID of the space to remove", required = true)
-            @PathVariable String spaceId) {
+        @Parameter(description = "ID of the restaurant", required = true)
+        @PathVariable String id,
+        @Parameter(description = "UUID of the space to remove", required = true)
+        @PathVariable String spaceId) {
         try {
             ObjectId objectId = new ObjectId(id);
             UUID spaceUuid = UUID.fromString(spaceId);
             Optional<Restaurant> updatedRestaurant = restaurantService.removeSpaceFromRestaurant(objectId, spaceUuid);
             return updatedRestaurant.map(r -> ResponseEntity.ok(restaurantMapper.toDTO(r)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

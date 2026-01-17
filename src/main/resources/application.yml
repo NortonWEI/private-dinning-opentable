@@ -4,6 +4,8 @@ spring:
     name: private-dining
   data:
     mongodb:
+      host: localhost
+      port: 27017
       database: private_dining
 
 # Embedded MongoDB Configuration

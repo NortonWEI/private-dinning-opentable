@@ -1,30 +1,33 @@
 package com.opentable.privatedining.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.opentable.privatedining.exception.InvalidPartySizeException;
 import com.opentable.privatedining.exception.ReservationConflictException;
-import com.opentable.privatedining.exception.ReservationNotFoundException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
 import com.opentable.privatedining.exception.SpaceNotFoundException;
 import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.repository.ReservationRepository;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
@@ -99,7 +102,8 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50);
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -147,7 +151,8 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50);
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
 
@@ -168,7 +173,8 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50);
         Space space = new Space("Test Space", 2, 8); // Min capacity is 2
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -191,7 +197,8 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50);
         Space space = new Space("Test Space", 2, 8); // Max capacity is 8
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -227,7 +234,8 @@ class ReservationServiceTest {
         existingReservation.setStartTime(startTime.minusMinutes(30));
         existingReservation.setEndTime(endTime.minusMinutes(30));
 
-        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant("Test Restaurant", "Address", "Cuisine", 50);
+        com.opentable.privatedining.model.Restaurant restaurant = new com.opentable.privatedining.model.Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50);
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));

@@ -3,13 +3,11 @@ package com.opentable.privatedining.service;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.repository.RestaurantRepository;
-import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.bson.types.ObjectId;
+import org.springframework.stereotype.Service;
 
 @Service
 public class RestaurantService {
@@ -74,8 +72,8 @@ public class RestaurantService {
         Optional<Restaurant> restaurantOpt = restaurantRepository.findById(restaurantId);
         if (restaurantOpt.isPresent()) {
             return restaurantOpt.get().getSpaces().stream()
-                    .filter(space -> space.getId().equals(spaceId))
-                    .findFirst();
+                .filter(space -> space.getId().equals(spaceId))
+                .findFirst();
         }
         return Optional.empty();
     }

@@ -1,9 +1,12 @@
 package com.opentable.privatedining.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.UUID;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class SpaceDTO {
 
     @Schema(description = "Unique identifier for the space", example = "123e4567-e89b-12d3-a456-426614174000", type = "string")
@@ -18,7 +21,8 @@ public class SpaceDTO {
     @Schema(description = "Maximum capacity for the space", example = "12")
     private Integer maxCapacity;
 
-    public SpaceDTO() {}
+    public SpaceDTO() {
+    }
 
     public SpaceDTO(String name, Integer minCapacity, Integer maxCapacity) {
         this.name = name;
@@ -30,38 +34,6 @@ public class SpaceDTO {
         this.id = id;
         this.name = name;
         this.minCapacity = minCapacity;
-        this.maxCapacity = maxCapacity;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getMinCapacity() {
-        return minCapacity;
-    }
-
-    public void setMinCapacity(Integer minCapacity) {
-        this.minCapacity = minCapacity;
-    }
-
-    public Integer getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(Integer maxCapacity) {
         this.maxCapacity = maxCapacity;
     }
 }
