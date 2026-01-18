@@ -40,8 +40,14 @@ public class ReservationService {
     public Reservation createReservation(Reservation reservation) {
         // Basic validations
         if (reservation.getStartTime().isAfter(reservation.getEndTime()) ||
-            reservation.getStartTime().isEqual(reservation.getEndTime())) {
+            reservation.getStartTime().isEqual(reservation.getEndTime()) ||
+            !reservation.getStartTime().isAfter(LocalDateTime.now())) {
             throw new InvalidReservationException("Reservation start time must be before end time.");
+        }
+
+        // Check if the reservation time is in a blocked period (currently only full and half-hour blocks allowed)
+        if (reservation.getStartTime().getMinute() % 30 != 0 || reservation.getEndTime().getMinute() % 30 != 0) {
+            throw new InvalidReservationException("Reservation times must be on the hour or half-hour.");
         }
 
         // Validate that the restaurant exists
