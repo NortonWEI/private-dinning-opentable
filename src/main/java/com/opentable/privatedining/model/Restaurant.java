@@ -29,14 +29,6 @@ public class Restaurant {
         this.spaces = new ArrayList<>();
     }
 
-    public Restaurant(String name, String address, String cuisineType, Integer capacity) {
-        this.name = name;
-        this.address = address;
-        this.cuisineType = cuisineType;
-        this.capacity = capacity;
-        this.spaces = new ArrayList<>();
-    }
-
     public Restaurant(String name, String address, String cuisineType, Integer capacity, LocalTime startTime,
         LocalTime endTime) {
         this.name = name;

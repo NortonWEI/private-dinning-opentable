@@ -39,22 +39,15 @@ public class RestaurantDTO {
         this.spaces = new ArrayList<>();
     }
 
-    public RestaurantDTO(String name, String address, String cuisineType, Integer capacity) {
+    public RestaurantDTO(String name, String address, String cuisineType, Integer capacity, LocalTime startTime,
+        LocalTime endTime) {
         this.name = name;
         this.address = address;
         this.cuisineType = cuisineType;
         this.capacity = capacity;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.spaces = new ArrayList<>();
-    }
-
-    public RestaurantDTO(String id, String name, String address, String cuisineType, Integer capacity,
-        List<SpaceDTO> spaces) {
-        this.id = id;
-        this.name = name;
-        this.address = address;
-        this.cuisineType = cuisineType;
-        this.capacity = capacity;
-        this.spaces = spaces != null ? spaces : new ArrayList<>();
     }
 
     public RestaurantDTO(String id, String name, String address, String cuisineType, Integer capacity,

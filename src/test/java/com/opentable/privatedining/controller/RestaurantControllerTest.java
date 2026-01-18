@@ -19,6 +19,7 @@ import com.opentable.privatedining.mapper.SpaceMapper;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.service.RestaurantService;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -52,14 +53,16 @@ class RestaurantControllerTest {
     @Test
     void getAllRestaurants_ShouldReturnListOfRestaurants() throws Exception {
         // Given
-        Restaurant restaurant1 = new Restaurant("Restaurant 1", "Address 1", "Italian", 50);
-        Restaurant restaurant2 = new Restaurant("Restaurant 2", "Address 2", "French", 30);
+        Restaurant restaurant1 = new Restaurant("Restaurant 1", "Address 1", "Italian", 50, LocalTime.of(10, 0),
+            LocalTime.of(2, 0));
+        Restaurant restaurant2 = new Restaurant("Restaurant 2", "Address 2", "French", 30, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
         List<Restaurant> restaurants = Arrays.asList(restaurant1, restaurant2);
 
         RestaurantDTO restaurantDTO1 = new RestaurantDTO("1", "Restaurant 1", "Address 1", "Italian", 50,
-            Arrays.asList());
+            LocalTime.of(10, 0), LocalTime.of(2, 0), Arrays.asList());
         RestaurantDTO restaurantDTO2 = new RestaurantDTO("2", "Restaurant 2", "Address 2", "French", 30,
-            Arrays.asList());
+            LocalTime.of(11, 0), LocalTime.of(23, 0), Arrays.asList());
 
         when(restaurantService.getAllRestaurants()).thenReturn(restaurants);
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(restaurantDTO1).thenReturn(restaurantDTO2);
@@ -73,6 +76,8 @@ class RestaurantControllerTest {
             .andExpect(jsonPath("$[0].address").value("Address 1"))
             .andExpect(jsonPath("$[0].cuisineType").value("Italian"))
             .andExpect(jsonPath("$[0].capacity").value(50))
+            .andExpect(jsonPath("$[0].startTime").value("10:00:00"))
+            .andExpect(jsonPath("$[0].endTime").value("02:00:00"))
             .andExpect(jsonPath("$[1].name").value("Restaurant 2"));
     }
 
@@ -80,11 +85,12 @@ class RestaurantControllerTest {
     void getRestaurantById_WhenRestaurantExists_ShouldReturnRestaurant() throws Exception {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 40);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 40,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
 
         RestaurantDTO restaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant", "Test Address",
-            "Test Cuisine", 40, Arrays.asList());
+            "Test Cuisine", 40, LocalTime.of(11, 0), LocalTime.of(23, 0), Arrays.asList());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
         when(restaurantMapper.toDTO(any(Restaurant.class))).thenReturn(restaurantDTO);
@@ -96,7 +102,9 @@ class RestaurantControllerTest {
             .andExpect(jsonPath("$.name").value("Test Restaurant"))
             .andExpect(jsonPath("$.address").value("Test Address"))
             .andExpect(jsonPath("$.cuisineType").value("Test Cuisine"))
-            .andExpect(jsonPath("$.capacity").value(40));
+            .andExpect(jsonPath("$.capacity").value(40))
+            .andExpect(jsonPath("$.startTime").value("11:00:00"))
+            .andExpect(jsonPath("$.endTime").value("23:00:00"));
     }
 
     @Test
@@ -120,12 +128,15 @@ class RestaurantControllerTest {
     @Test
     void createRestaurant_ShouldReturnCreatedRestaurant() throws Exception {
         // Given
-        RestaurantDTO inputRestaurantDTO = new RestaurantDTO("New Restaurant", "New Address", "New Cuisine", 60);
-        Restaurant restaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
-        Restaurant savedRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
+        RestaurantDTO inputRestaurantDTO = new RestaurantDTO("New Restaurant", "New Address", "New Cuisine", 60,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
+        Restaurant savedRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         savedRestaurant.setId(new ObjectId());
         RestaurantDTO savedRestaurantDTO = new RestaurantDTO(savedRestaurant.getId().toString(), "New Restaurant",
-            "New Address", "New Cuisine", 60, Arrays.asList());
+            "New Address", "New Cuisine", 60, LocalTime.of(11, 0), LocalTime.of(23, 0), Arrays.asList());
 
         when(restaurantMapper.toModel(any(RestaurantDTO.class))).thenReturn(restaurant);
         when(restaurantService.createRestaurant(any(Restaurant.class))).thenReturn(savedRestaurant);
@@ -140,7 +151,9 @@ class RestaurantControllerTest {
             .andExpect(jsonPath("$.name").value("New Restaurant"))
             .andExpect(jsonPath("$.address").value("New Address"))
             .andExpect(jsonPath("$.cuisineType").value("New Cuisine"))
-            .andExpect(jsonPath("$.capacity").value(60));
+            .andExpect(jsonPath("$.capacity").value(60))
+            .andExpect(jsonPath("$.startTime").value("11:00:00"))
+            .andExpect(jsonPath("$.endTime").value("23:00:00"));
     }
 
     @Test
@@ -148,12 +161,14 @@ class RestaurantControllerTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         RestaurantDTO inputRestaurantDTO = new RestaurantDTO("Updated Restaurant", "Updated Address", "Updated Cuisine",
-            70);
-        Restaurant restaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
-        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
+            70, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         updatedRestaurant.setId(restaurantId);
         RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Updated Restaurant",
-            "Updated Address", "Updated Cuisine", 70, Arrays.asList());
+            "Updated Address", "Updated Cuisine", 70, LocalTime.of(11, 0), LocalTime.of(23, 0), Arrays.asList());
 
         when(restaurantMapper.toModel(any(RestaurantDTO.class))).thenReturn(restaurant);
         when(restaurantService.updateRestaurant(eq(restaurantId), any(Restaurant.class))).thenReturn(
@@ -174,8 +189,10 @@ class RestaurantControllerTest {
     void updateRestaurant_WhenRestaurantNotFound_ShouldReturn404() throws Exception {
         // Given
         ObjectId restaurantId = new ObjectId();
-        RestaurantDTO restaurantDTO = new RestaurantDTO("Restaurant", "Address", "Cuisine", 50);
-        Restaurant restaurant = new Restaurant("Restaurant", "Address", "Cuisine", 50);
+        RestaurantDTO restaurantDTO = new RestaurantDTO("Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
+        Restaurant restaurant = new Restaurant("Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
 
         when(restaurantMapper.toModel(restaurantDTO)).thenReturn(restaurant);
         when(restaurantService.updateRestaurant(eq(restaurantId), eq(restaurant))).thenReturn(Optional.empty());
@@ -190,7 +207,8 @@ class RestaurantControllerTest {
     @Test
     void updateRestaurant_WhenInvalidId_ShouldReturn400() throws Exception {
         // Given
-        RestaurantDTO restaurantDTO = new RestaurantDTO("Restaurant", "Address", "Cuisine", 50);
+        RestaurantDTO restaurantDTO = new RestaurantDTO("Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
 
         // When & Then
         mockMvc.perform(put("/v1/restaurants/invalid-id")
@@ -234,13 +252,15 @@ class RestaurantControllerTest {
         ObjectId restaurantId = new ObjectId();
         SpaceDTO spaceDTO = new SpaceDTO("Private Room", 2, 10);
         Space space = new Space("Private Room", 2, 10);
-        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         updatedRestaurant.setId(restaurantId);
         updatedRestaurant.getSpaces().add(space);
 
         SpaceDTO returnedSpaceDTO = new SpaceDTO(UUID.randomUUID(), "Private Room", 2, 10);
         RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant",
-            "Test Address", "Test Cuisine", 50, Arrays.asList(returnedSpaceDTO));
+            "Test Address", "Test Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0),
+            Arrays.asList(returnedSpaceDTO));
 
         when(spaceMapper.toModel(any(SpaceDTO.class))).thenReturn(space);
         when(restaurantService.addSpaceToRestaurant(eq(restaurantId), any(Space.class))).thenReturn(
@@ -293,10 +313,11 @@ class RestaurantControllerTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         updatedRestaurant.setId(restaurantId);
         RestaurantDTO updatedRestaurantDTO = new RestaurantDTO(restaurantId.toString(), "Test Restaurant",
-            "Test Address", "Test Cuisine", 50, Arrays.asList());
+            "Test Address", "Test Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0), Arrays.asList());
 
         when(restaurantService.removeSpaceFromRestaurant(restaurantId, spaceId)).thenReturn(
             Optional.of(updatedRestaurant));

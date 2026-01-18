@@ -1,5 +1,6 @@
 package com.opentable.privatedining.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.repository.RestaurantRepository;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -35,8 +37,10 @@ class RestaurantServiceTest {
     @Test
     void getAllRestaurants_ShouldReturnAllRestaurants() {
         // Given
-        Restaurant restaurant1 = new Restaurant("Restaurant 1", "Address 1", "Italian", 50);
-        Restaurant restaurant2 = new Restaurant("Restaurant 2", "Address 2", "French", 30);
+        Restaurant restaurant1 = new Restaurant("Restaurant 1", "Address 1", "Italian", 50, LocalTime.of(10, 0),
+            LocalTime.of(2, 0));
+        Restaurant restaurant2 = new Restaurant("Restaurant 2", "Address 2", "French", 30, LocalTime.of(11, 0),
+            LocalTime.of(23, 0));
         List<Restaurant> restaurants = Arrays.asList(restaurant1, restaurant2);
 
         when(restaurantRepository.findAll()).thenReturn(restaurants);
@@ -46,8 +50,7 @@ class RestaurantServiceTest {
 
         // Then
         assertEquals(2, result.size());
-        assertEquals("Restaurant 1", result.get(0).getName());
-        assertEquals("Restaurant 2", result.get(1).getName());
+        assertThat(result).containsExactlyInAnyOrder(restaurant1, restaurant2);
         verify(restaurantRepository).findAll();
     }
 
@@ -55,7 +58,8 @@ class RestaurantServiceTest {
     void getRestaurantById_WhenRestaurantExists_ShouldReturnRestaurant() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 40);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 40,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
@@ -65,8 +69,7 @@ class RestaurantServiceTest {
 
         // Then
         assertTrue(result.isPresent());
-        assertEquals("Test Restaurant", result.get().getName());
-        assertEquals("Test Address", result.get().getAddress());
+        assertThat(result.get()).isEqualTo(restaurant);
         verify(restaurantRepository).findById(restaurantId);
     }
 
@@ -87,8 +90,10 @@ class RestaurantServiceTest {
     @Test
     void createRestaurant_ShouldReturnSavedRestaurant() {
         // Given
-        Restaurant inputRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
-        Restaurant savedRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60);
+        Restaurant inputRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant savedRestaurant = new Restaurant("New Restaurant", "New Address", "New Cuisine", 60,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         savedRestaurant.setId(new ObjectId());
 
         when(restaurantRepository.save(inputRestaurant)).thenReturn(savedRestaurant);
@@ -98,7 +103,7 @@ class RestaurantServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals("New Restaurant", result.getName());
+        assertThat(result).isEqualTo(savedRestaurant);
         assertNotNull(result.getId());
         verify(restaurantRepository).save(inputRestaurant);
     }
@@ -107,10 +112,12 @@ class RestaurantServiceTest {
     void updateRestaurant_WhenRestaurantExists_ShouldReturnUpdatedRestaurant() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant existingRestaurant = new Restaurant("Old Restaurant", "Old Address", "Old Cuisine", 50);
+        Restaurant existingRestaurant = new Restaurant("Old Restaurant", "Old Address", "Old Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         existingRestaurant.setId(restaurantId);
 
-        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
+        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70,
+            LocalTime.of(10, 0), LocalTime.of(22, 0));
         updatedRestaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(existingRestaurant));
@@ -121,8 +128,7 @@ class RestaurantServiceTest {
 
         // Then
         assertTrue(result.isPresent());
-        assertEquals("Updated Restaurant", result.get().getName());
-        assertEquals(restaurantId, result.get().getId());
+        assertThat(result.get()).isEqualTo(updatedRestaurant);
         verify(restaurantRepository).findById(restaurantId);
         verify(restaurantRepository).save(updatedRestaurant);
     }
@@ -131,7 +137,8 @@ class RestaurantServiceTest {
     void updateRestaurant_WhenRestaurantNotFound_ShouldReturnEmpty() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70);
+        Restaurant updatedRestaurant = new Restaurant("Updated Restaurant", "Updated Address", "Updated Cuisine", 70,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
 
@@ -148,7 +155,8 @@ class RestaurantServiceTest {
     void deleteRestaurant_WhenRestaurantExists_ShouldReturnTrue() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant existingRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant existingRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         existingRestaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(existingRestaurant));
@@ -181,11 +189,13 @@ class RestaurantServiceTest {
     void addSpaceToRestaurant_WhenRestaurantExists_ShouldReturnUpdatedRestaurant() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
 
         Space space = new Space("Private Room", 2, 10);
-        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         updatedRestaurant.setId(restaurantId);
         updatedRestaurant.getSpaces().add(space);
 
@@ -198,7 +208,7 @@ class RestaurantServiceTest {
         // Then
         assertTrue(result.isPresent());
         assertEquals(1, result.get().getSpaces().size());
-        assertEquals("Private Room", result.get().getSpaces().get(0).getName());
+        assertThat(result.get()).isEqualTo(updatedRestaurant);
         verify(restaurantRepository).findById(restaurantId);
         verify(restaurantRepository).save(restaurant);
     }
@@ -229,11 +239,13 @@ class RestaurantServiceTest {
         Space space = new Space("Private Room", 2, 10);
         space.setId(spaceId);
 
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
         restaurant.getSpaces().add(space);
 
-        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant updatedRestaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         updatedRestaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
@@ -275,7 +287,8 @@ class RestaurantServiceTest {
         Space space = new Space("Private Room", 2, 10);
         space.setId(spaceId);
 
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
         restaurant.getSpaces().add(space);
 
@@ -286,8 +299,7 @@ class RestaurantServiceTest {
 
         // Then
         assertTrue(result.isPresent());
-        assertEquals("Private Room", result.get().getName());
-        assertEquals(spaceId, result.get().getId());
+        assertThat(result.get()).isEqualTo(space);
         verify(restaurantRepository).findById(restaurantId);
     }
 
@@ -297,7 +309,8 @@ class RestaurantServiceTest {
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
@@ -335,7 +348,8 @@ class RestaurantServiceTest {
         Space space = new Space("Private Room", 2, 10);
         space.setId(spaceId);
 
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
         restaurant.getSpaces().add(space);
 
@@ -355,7 +369,8 @@ class RestaurantServiceTest {
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50);
+        Restaurant restaurant = new Restaurant("Test Restaurant", "Test Address", "Test Cuisine", 50,
+            LocalTime.of(11, 0), LocalTime.of(23, 0));
         restaurant.setId(restaurantId);
 
         when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
