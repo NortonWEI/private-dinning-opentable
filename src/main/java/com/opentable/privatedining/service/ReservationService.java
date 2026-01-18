@@ -1,6 +1,6 @@
 package com.opentable.privatedining.service;
 
-import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.common.Constant;
 import com.opentable.privatedining.exception.InvalidReservationException;
 import com.opentable.privatedining.exception.ReservationConflictException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
@@ -9,6 +9,7 @@ import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.model.Restaurant;
 import com.opentable.privatedining.model.Space;
 import com.opentable.privatedining.repository.ReservationRepository;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -39,14 +40,15 @@ public class ReservationService {
 
     public Reservation createReservation(Reservation reservation) {
         // Basic validations
-        if (reservation.getStartTime().isAfter(reservation.getEndTime()) ||
-            reservation.getStartTime().isEqual(reservation.getEndTime()) ||
+        if (!reservation.getStartTime().isBefore(reservation.getEndTime()) ||
             !reservation.getStartTime().isAfter(LocalDateTime.now())) {
-            throw new InvalidReservationException("Reservation start time must be before end time.");
+            throw new InvalidReservationException(
+                "Reservation start time must be before end time, and starts in a future time.");
         }
 
         // Check if the reservation time is in a blocked period (currently only full and half-hour blocks allowed)
-        if (reservation.getStartTime().getMinute() % 30 != 0 || reservation.getEndTime().getMinute() % 30 != 0) {
+        if (reservation.getStartTime().getMinute() % Constant.BLOCK_INTERVAL_MIN
+            != 0 || reservation.getEndTime().getMinute() % Constant.BLOCK_INTERVAL_MIN != 0) {
             throw new InvalidReservationException("Reservation times must be on the hour or half-hour.");
         }
 
@@ -62,21 +64,6 @@ public class ReservationService {
             .findFirst()
             .orElseThrow(() -> new SpaceNotFoundException(reservation.getRestaurantId(), reservation.getSpaceId()));
 
-        // Validate party size is within space capacity
-        if (reservation.getPartySize() < space.getMinCapacity() ||
-            reservation.getPartySize() > space.getMaxCapacity()) {
-            throw new InvalidPartySizeException(
-                reservation.getPartySize(), space.getMinCapacity(), space.getMaxCapacity());
-        }
-
-        // Check for overlapping reservations
-        if (hasOverlappingReservation(reservation.getRestaurantId(), reservation.getSpaceId(),
-            reservation.getStartTime(), reservation.getEndTime())) {
-            throw new ReservationConflictException(
-                reservation.getRestaurantId(), reservation.getSpaceId(),
-                reservation.getStartTime(), reservation.getEndTime());
-        }
-
         // Check if the reservation is within restaurant operating hours
         if (!isWithinOperatingHours(reservation.getStartTime(), reservation.getEndTime(), restaurant.getStartTime(),
             restaurant.getEndTime())) {
@@ -84,7 +71,49 @@ public class ReservationService {
                 reservation.getStartTime(), reservation.getEndTime());
         }
 
+        // Check for concurrent reservation conflicts
+        if (!isValidConcurrentReservation(reservation.getRestaurantId(), reservation.getSpaceId(),
+            space.getMinCapacity(), space.getMaxCapacity(), reservation.getStartTime(), reservation.getEndTime(),
+            reservation.getPartySize())) {
+            throw new ReservationConflictException(
+                reservation.getRestaurantId(), reservation.getSpaceId(),
+                reservation.getStartTime(), reservation.getEndTime(), space.getMinCapacity(), space.getMaxCapacity(),
+                reservation.getPartySize(), reservation.getStartTime());
+        }
+
         return reservationRepository.save(reservation);
+    }
+
+    private boolean isValidConcurrentReservation(ObjectId restaurantId, UUID spaceId, int spaceMinCapacity,
+        int spaceMaxCapacity, LocalDateTime startTime, LocalDateTime endTime, int partySize) {
+        List<Reservation> reservations = reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(
+            restaurantId, spaceId, startTime, endTime);
+
+        if (reservations.isEmpty()) {
+            // no overlapping reservations found
+            throw new ReservationConflictException(restaurantId, spaceId, startTime, endTime, spaceMinCapacity,
+                spaceMaxCapacity, partySize, startTime);
+        }
+
+        // currently the time slots are blocked in half-hour increments
+        long minuteInterval = Duration.between(startTime, endTime).toMinutes();
+        if (minuteInterval % Constant.BLOCK_INTERVAL_MIN != 0) {
+            // this should never happen due to earlier validation and our assumption, but just in case
+            throw new InvalidReservationException("Reservation times must be in half-hour increments.");
+        }
+        for (int i = 0; i < (int) (minuteInterval / Constant.BLOCK_INTERVAL_MIN); i++) {
+            LocalDateTime slotStart = startTime.plusMinutes((long) i * Constant.BLOCK_INTERVAL_MIN);
+            LocalDateTime slotEnd = slotStart.plusMinutes(Constant.BLOCK_INTERVAL_MIN);
+            List<Reservation> slotRes = reservations.stream()
+                .filter(res -> res.getStartTime().isBefore(slotEnd) && res.getEndTime().isAfter(slotStart)).toList();
+            int proposedPartySize = slotRes.stream().mapToInt(Reservation::getPartySize).sum() + partySize;
+            if (proposedPartySize > spaceMaxCapacity || proposedPartySize < spaceMinCapacity) {
+                throw new ReservationConflictException(restaurantId, spaceId, startTime, endTime, spaceMinCapacity,
+                    spaceMaxCapacity, proposedPartySize, slotStart);
+            }
+        }
+
+        return true;
     }
 
     private boolean isWithinOperatingHours(LocalDateTime rsvtStart, LocalDateTime rsvtEnd, LocalTime restStart,
@@ -128,30 +157,5 @@ public class ReservationService {
             .filter(reservation -> reservation.getRestaurantId().equals(restaurantId) &&
                 reservation.getSpaceId().equals(spaceId))
             .toList();
-    }
-
-    private boolean hasOverlappingReservation(ObjectId restaurantId, UUID spaceId,
-        LocalDateTime startTime, LocalDateTime endTime) {
-        return reservationRepository.findAll().stream()
-            .anyMatch(existing -> existing.getRestaurantId().equals(restaurantId) &&
-                existing.getSpaceId().equals(spaceId) &&
-                isTimeOverlapping(existing.getStartTime(), existing.getEndTime(),
-                    startTime, endTime));
-    }
-
-    private boolean hasOverlappingReservationExcluding(ObjectId restaurantId, UUID spaceId,
-        LocalDateTime startTime, LocalDateTime endTime,
-        ObjectId excludeReservationId) {
-        return reservationRepository.findAll().stream()
-            .anyMatch(existing -> !existing.getId().equals(excludeReservationId) &&
-                existing.getRestaurantId().equals(restaurantId) &&
-                existing.getSpaceId().equals(spaceId) &&
-                isTimeOverlapping(existing.getStartTime(), existing.getEndTime(),
-                    startTime, endTime));
-    }
-
-    private boolean isTimeOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd,
-        LocalDateTime newStart, LocalDateTime newEnd) {
-        return newStart.isBefore(existingEnd) && newEnd.isAfter(existingStart);
     }
 }

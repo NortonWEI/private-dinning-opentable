@@ -7,9 +7,11 @@ import org.bson.types.ObjectId;
 public class ReservationConflictException extends RuntimeException {
 
     public ReservationConflictException(ObjectId restaurantId, UUID spaceId, LocalDateTime startTime,
-        LocalDateTime endTime) {
-        super("Reservation conflict: the requested time slot (" + startTime + " to " + endTime +
-            ") overlaps with an existing reservation for space " + spaceId + " in restaurant " + restaurantId);
+        LocalDateTime endTime, int minCapacity, int maxCapacity, int proposedCapacity,
+        LocalDateTime conflictStartTime) {
+        super(String.format(
+            "Reservation conflict: the requested time slot (%s to %s) breaks the capacity constraints (%d - %d) for space %s in restaurant %s. Invalid capacity %d starts from %s",
+            startTime, endTime, minCapacity, maxCapacity, spaceId, restaurantId, proposedCapacity, conflictStartTime));
     }
 
     public ReservationConflictException(String message) {
