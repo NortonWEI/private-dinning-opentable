@@ -5,16 +5,20 @@ import com.opentable.privatedining.mapper.reporting.OccupancyReportMapper;
 import com.opentable.privatedining.model.reporting.OccupancyReport;
 import com.opentable.privatedining.service.ReportingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -30,7 +34,7 @@ public class ReportingController {
         this.occupancyReportMapper = occupancyReportMapper;
     }
 
-    @GetMapping("/occupancy")
+    @GetMapping("/{id}/occupancy")
     @Operation(summary = "Occupancy report", description = "Retrieve occupancy levels for a given restaurant over a specified period")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Valid id and date/time range",
@@ -38,8 +42,19 @@ public class ReportingController {
         @ApiResponse(responseCode = "404", description = "Restaurant/space not found"),
         @ApiResponse(responseCode = "400", description = "Invalid start/end time or granularity")
     })
-    public ResponseEntity<OccupancyReportDTO> getOccupancyReport(@RequestBody OccupancyReportDTO requestDto) {
+    public ResponseEntity<OccupancyReportDTO> getOccupancyReport(
+        @Parameter(description = "ID of the restaurant to retrieve", required = true)
+        @PathVariable("id") String id,
+        @Parameter(description = "Report Start time", required = true)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        @RequestParam("start") LocalDateTime start,
+        @Parameter(description = "Report End time", required = true)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+        @RequestParam("end") LocalDateTime end,
+        @Parameter(description = "ID of the space to retrieve")
+        @RequestParam(value = "spaceId", required = false) String spaceId) {
         try {
+            OccupancyReportDTO requestDto = new OccupancyReportDTO(id, spaceId, start, end);
             OccupancyReport request = occupancyReportMapper.toModel(requestDto);
             Optional<OccupancyReport> report = reportService.getOccupancyReport(request);
             return report.map(r -> ResponseEntity.ok(occupancyReportMapper.toDto(r)))

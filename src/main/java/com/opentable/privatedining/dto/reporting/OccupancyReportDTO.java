@@ -34,4 +34,11 @@ public class OccupancyReportDTO {
 
     @Schema(description = "Occupancy data for the specific space")
     private List<OccupancyDataDTO> spaceData;
+
+    public OccupancyReportDTO(String restaurantId, String spaceId, LocalDateTime start, LocalDateTime end) {
+        this.restaurantId = restaurantId;
+        this.spaceId = spaceId;
+        this.start = start;
+        this.end = end;
+    }
 }
