@@ -37,13 +37,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler(InvalidPartySizeException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidPartySize(
-        InvalidPartySizeException ex, WebRequest request) {
-        logger.warn("Invalid party size: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-    }
-
     @ExceptionHandler(ReservationConflictException.class)
     public ResponseEntity<Map<String, Object>> handleReservationConflict(
         ReservationConflictException ex, WebRequest request) {
