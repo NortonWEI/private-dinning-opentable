@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.opentable.privatedining.TestDataHelper;
 import com.opentable.privatedining.exception.InvalidReservationException;
 import com.opentable.privatedining.exception.ReservationConflictException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
@@ -47,8 +48,8 @@ class ReservationServiceTest {
     @Test
     void getAllReservations_ShouldReturnAllReservations() {
         // Given
-        Reservation reservation1 = createTestReservation("customer1@example.com", 4);
-        Reservation reservation2 = createTestReservation("customer2@example.com", 6);
+        Reservation reservation1 = TestDataHelper.createTestReservation("customer1@example.com", 4);
+        Reservation reservation2 = TestDataHelper.createTestReservation("customer2@example.com", 6);
         List<Reservation> reservations = Arrays.asList(reservation1, reservation2);
 
         when(reservationRepository.findAll()).thenReturn(reservations);
@@ -66,7 +67,7 @@ class ReservationServiceTest {
     void getReservationById_WhenReservationExists_ShouldReturnReservation() {
         // Given
         ObjectId reservationId = new ObjectId();
-        Reservation reservation = createTestReservation("test@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("test@example.com", 4);
         reservation.setId(reservationId);
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
@@ -99,12 +100,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        Reservation invalidReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         invalidReservation.setEndTime(invalidReservation.getStartTime().minusHours(1));
         invalidReservation.setRestaurantId(restaurantId);
         invalidReservation.setSpaceId(spaceId);
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         savedReservation.setId(new ObjectId());
 
         // Then
@@ -116,12 +117,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        Reservation invalidReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         invalidReservation.setEndTime(LocalDateTime.now().minusHours(1));
         invalidReservation.setRestaurantId(restaurantId);
         invalidReservation.setSpaceId(spaceId);
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         savedReservation.setId(new ObjectId());
 
         // Then
@@ -133,12 +134,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        Reservation invalidReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         invalidReservation.setEndTime(invalidReservation.getStartTime().plusHours(25));
         invalidReservation.setRestaurantId(restaurantId);
         invalidReservation.setSpaceId(spaceId);
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         savedReservation.setId(new ObjectId());
 
         // Then
@@ -150,12 +151,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        Reservation invalidReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         invalidReservation.setStartTime(invalidReservation.getStartTime().plusMinutes(1));
         invalidReservation.setRestaurantId(restaurantId);
         invalidReservation.setSpaceId(spaceId);
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         savedReservation.setId(new ObjectId());
 
         // Then
@@ -167,16 +168,16 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         savedReservation.setId(new ObjectId());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
@@ -199,7 +200,7 @@ class ReservationServiceTest {
     void createReservation_WhenRestaurantNotFound_ShouldThrowException() {
         // Given
         ObjectId restaurantId = new ObjectId();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setRestaurantId(restaurantId);
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.empty());
@@ -217,11 +218,11 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
 
@@ -238,12 +239,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setStartTime(LocalDateTime.of(2026, 1, 30, 9, 0)); // Before opening time
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -261,12 +262,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setEndTime(LocalDateTime.of(2026, 1, 31, 3, 0)); // After closing time
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         restaurant.setEndTime(LocalTime.of(2, 0)); // Overnight hours
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
@@ -285,11 +286,11 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 1); // Below min capacity
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 1); // Below min capacity
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8); // Min capacity is 2
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -307,11 +308,12 @@ class ReservationServiceTest {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
-        Reservation reservation = createTestReservation("customer@example.com", 10); // Above max capacity
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com",
+            10); // Above max capacity
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8); // Max capacity is 8
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -330,24 +332,24 @@ class ReservationServiceTest {
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        Reservation newReservation = createTestReservation("customer@example.com", 6);
+        Reservation newReservation = TestDataHelper.createTestReservation("customer@example.com", 6);
         newReservation.setRestaurantId(restaurantId);
         newReservation.setSpaceId(spaceId);
 
         // Existing reservation
-        Reservation existingReservation1 = createTestReservation("other@example.com", 2);
+        Reservation existingReservation1 = TestDataHelper.createTestReservation("other@example.com", 2);
         existingReservation1.setRestaurantId(restaurantId);
         existingReservation1.setSpaceId(spaceId);
         existingReservation1.setStartTime(newReservation.getStartTime().plusMinutes(30));
         existingReservation1.setEndTime(newReservation.getEndTime().plusMinutes(30));
 
-        Reservation existingReservation2 = createTestReservation("other@example.com", 2);
+        Reservation existingReservation2 = TestDataHelper.createTestReservation("other@example.com", 2);
         existingReservation2.setRestaurantId(restaurantId);
         existingReservation2.setSpaceId(spaceId);
         existingReservation2.setStartTime(newReservation.getStartTime().minusMinutes(30));
         existingReservation2.setEndTime(newReservation.getEndTime().minusMinutes(30));
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -368,18 +370,18 @@ class ReservationServiceTest {
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        Reservation newReservation = createTestReservation("customer@example.com", 1);
+        Reservation newReservation = TestDataHelper.createTestReservation("customer@example.com", 1);
         newReservation.setRestaurantId(restaurantId);
         newReservation.setSpaceId(spaceId);
 
         // Existing reservation
-        Reservation existingReservation = createTestReservation("other@example.com", 6);
+        Reservation existingReservation = TestDataHelper.createTestReservation("other@example.com", 6);
         existingReservation.setRestaurantId(restaurantId);
         existingReservation.setSpaceId(spaceId);
         existingReservation.setStartTime(newReservation.getStartTime().minusMinutes(30));
         existingReservation.setEndTime(newReservation.getEndTime().minusMinutes(30));
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -400,23 +402,23 @@ class ReservationServiceTest {
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        Reservation newReservation = createTestReservation("customer@example.com", 2);
+        Reservation newReservation = TestDataHelper.createTestReservation("customer@example.com", 2);
         newReservation.setRestaurantId(restaurantId);
         newReservation.setSpaceId(spaceId);
 
         // Existing reservation
-        Reservation existingReservation = createTestReservation("other@example.com", 4);
+        Reservation existingReservation = TestDataHelper.createTestReservation("other@example.com", 4);
         existingReservation.setRestaurantId(restaurantId);
         existingReservation.setSpaceId(spaceId);
         existingReservation.setStartTime(newReservation.getStartTime().minusMinutes(30));
         existingReservation.setEndTime(newReservation.getEndTime().minusMinutes(30));
 
-        Restaurant restaurant = createTestRestaurant();
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
-        Reservation savedReservation = createTestReservation("customer@example.com", 2);
+        Reservation savedReservation = TestDataHelper.createTestReservation("customer@example.com", 2);
         savedReservation.setId(new ObjectId());
 
         // When
@@ -440,7 +442,7 @@ class ReservationServiceTest {
     void deleteReservation_WhenReservationExists_ShouldReturnTrue() {
         // Given
         ObjectId reservationId = new ObjectId();
-        Reservation reservation = createTestReservation("customer@example.com", 4);
+        Reservation reservation = TestDataHelper.createTestReservation("customer@example.com", 4);
         reservation.setId(reservationId);
 
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
@@ -475,13 +477,13 @@ class ReservationServiceTest {
         ObjectId restaurantId = new ObjectId();
         ObjectId otherRestaurantId = new ObjectId();
 
-        Reservation reservation1 = createTestReservation("customer1@example.com", 4);
+        Reservation reservation1 = TestDataHelper.createTestReservation("customer1@example.com", 4);
         reservation1.setRestaurantId(restaurantId);
 
-        Reservation reservation2 = createTestReservation("customer2@example.com", 6);
+        Reservation reservation2 = TestDataHelper.createTestReservation("customer2@example.com", 6);
         reservation2.setRestaurantId(otherRestaurantId);
 
-        Reservation reservation3 = createTestReservation("customer3@example.com", 2);
+        Reservation reservation3 = TestDataHelper.createTestReservation("customer3@example.com", 2);
         reservation3.setRestaurantId(restaurantId);
 
         List<Reservation> allReservations = Arrays.asList(reservation1, reservation2, reservation3);
@@ -504,15 +506,15 @@ class ReservationServiceTest {
         UUID spaceId = UUID.randomUUID();
         UUID otherSpaceId = UUID.randomUUID();
 
-        Reservation reservation1 = createTestReservation("customer1@example.com", 4);
+        Reservation reservation1 = TestDataHelper.createTestReservation("customer1@example.com", 4);
         reservation1.setRestaurantId(restaurantId);
         reservation1.setSpaceId(spaceId);
 
-        Reservation reservation2 = createTestReservation("customer2@example.com", 6);
+        Reservation reservation2 = TestDataHelper.createTestReservation("customer2@example.com", 6);
         reservation2.setRestaurantId(restaurantId);
         reservation2.setSpaceId(otherSpaceId);
 
-        Reservation reservation3 = createTestReservation("customer3@example.com", 2);
+        Reservation reservation3 = TestDataHelper.createTestReservation("customer3@example.com", 2);
         reservation3.setRestaurantId(restaurantId);
         reservation3.setSpaceId(spaceId);
 
@@ -527,22 +529,5 @@ class ReservationServiceTest {
         assertEquals(2, result.size());
         assertThat(result).containsExactlyInAnyOrder(reservation1, reservation3);
         verify(reservationRepository).findAll();
-    }
-
-    private Reservation createTestReservation(String customerEmail, int partySize) {
-        Reservation reservation = new Reservation();
-        reservation.setCustomerEmail(customerEmail);
-        reservation.setPartySize(partySize);
-        reservation.setRestaurantId(new ObjectId());
-        reservation.setSpaceId(UUID.randomUUID());
-        reservation.setStartTime(LocalDateTime.of(2026, 1, 30, 19, 0));
-        reservation.setEndTime(LocalDateTime.of(2026, 1, 30, 22, 0));
-        reservation.setStatus("CONFIRMED");
-        return reservation;
-    }
-
-    private Restaurant createTestRestaurant() {
-        return new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
     }
 }

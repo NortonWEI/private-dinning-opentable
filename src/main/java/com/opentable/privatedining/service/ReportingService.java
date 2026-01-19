@@ -56,13 +56,12 @@ public class ReportingService {
         // get the ceiling value of (minuteInterval / granularity)
         long limit = (minuteInterval + granularity - 1) / granularity;
         // cast limit to int, throw exception if overflow
-        // we do not expect limit to be in long range for production use cases
+        // this is unlikely to happen in practice since it would require a very large time range, just being defensive
         int intLimit;
         try {
             intLimit = Math.toIntExact(limit);
         } catch (ArithmeticException e) {
-            throw new InvalidReportingException(
-                "granularity is too small/time range is too large for the given time range");
+            throw new InvalidReportingException("given time range is too large");
         }
 
         OccupancyReport response = occupancyReportMapper.copy(request);
