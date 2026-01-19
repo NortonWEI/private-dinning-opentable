@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.bson.types.ObjectId;
 
 public final class TestDataHelper {
+
     private TestDataHelper() {
         // Private constructor to prevent instantiation
     }
