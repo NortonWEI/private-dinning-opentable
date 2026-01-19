@@ -40,10 +40,14 @@ public class ReservationService {
 
     public Reservation createReservation(Reservation reservation) {
         // Basic validations
-        if (!reservation.getStartTime().isBefore(reservation.getEndTime()) ||
-            !reservation.getStartTime().isAfter(LocalDateTime.now())) {
-            throw new InvalidReservationException(
-                "Reservation start time must be before end time, and starts in a future time.");
+        if (!reservation.getStartTime().isAfter(LocalDateTime.now())) {
+            throw new InvalidReservationException("Reservation must start in the future.");
+        }
+
+        // reservation duration must be positive and within 24 hours
+        Duration duration = Duration.between(reservation.getStartTime(), reservation.getEndTime());
+        if (duration.isNegative() || duration.isZero() || duration.toHours() > 24) {
+            throw new InvalidReservationException("Reservation duration must be positive and within 24 hours.");
         }
 
         // Check if the reservation time is in a blocked period (currently only full and half-hour blocks allowed)
@@ -91,8 +95,10 @@ public class ReservationService {
 
         if (reservations.isEmpty()) {
             // no overlapping reservations found
-            throw new ReservationConflictException(restaurantId, spaceId, startTime, endTime, spaceMinCapacity,
-                spaceMaxCapacity, partySize, startTime);
+            if (partySize > spaceMaxCapacity || partySize < spaceMinCapacity) {
+                throw new ReservationConflictException(restaurantId, spaceId, startTime, endTime, spaceMinCapacity,
+                    spaceMaxCapacity, partySize, startTime);
+            }
         }
 
         // currently the time slots are blocked in half-hour increments

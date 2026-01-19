@@ -1,5 +1,6 @@
 package com.opentable.privatedining.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -10,7 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.InvalidReservationException;
 import com.opentable.privatedining.exception.ReservationConflictException;
 import com.opentable.privatedining.exception.RestaurantNotFoundException;
 import com.opentable.privatedining.exception.SpaceNotFoundException;
@@ -57,8 +58,7 @@ class ReservationServiceTest {
 
         // Then
         assertEquals(2, result.size());
-        assertEquals("customer1@example.com", result.get(0).getCustomerEmail());
-        assertEquals("customer2@example.com", result.get(1).getCustomerEmail());
+        assertThat(result).containsExactlyInAnyOrder(reservation1, reservation2);
         verify(reservationRepository).findAll();
     }
 
@@ -76,8 +76,7 @@ class ReservationServiceTest {
 
         // Then
         assertTrue(result.isPresent());
-        assertEquals("test@example.com", result.get().getCustomerEmail());
-        assertEquals(4, result.get().getPartySize());
+        assertThat(result.get()).isEqualTo(reservation);
         verify(reservationRepository).findById(reservationId);
     }
 
@@ -96,6 +95,74 @@ class ReservationServiceTest {
     }
 
     @Test
+    void createReservation_WhenEndsEarlierReservation_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        invalidReservation.setEndTime(invalidReservation.getStartTime().minusHours(1));
+        invalidReservation.setRestaurantId(restaurantId);
+        invalidReservation.setSpaceId(spaceId);
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(invalidReservation));
+    }
+
+    @Test
+    void createReservation_WhenStartsBeforeNowReservation_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        invalidReservation.setEndTime(LocalDateTime.now().minusHours(1));
+        invalidReservation.setRestaurantId(restaurantId);
+        invalidReservation.setSpaceId(spaceId);
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(invalidReservation));
+    }
+
+    @Test
+    void createReservation_WhenTooLongReservation_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        invalidReservation.setEndTime(invalidReservation.getStartTime().plusHours(25));
+        invalidReservation.setRestaurantId(restaurantId);
+        invalidReservation.setSpaceId(spaceId);
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(invalidReservation));
+    }
+
+    @Test
+    void createReservation_WhenNotInBlockReservation_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation invalidReservation = createTestReservation("customer@example.com", 4);
+        invalidReservation.setStartTime(invalidReservation.getStartTime().plusMinutes(1));
+        invalidReservation.setRestaurantId(restaurantId);
+        invalidReservation.setSpaceId(spaceId);
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 4);
+        savedReservation.setId(new ObjectId());
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(invalidReservation));
+    }
+
+    @Test
     void createReservation_WhenValidReservation_ShouldReturnSavedReservation() {
         // Given
         ObjectId restaurantId = new ObjectId();
@@ -104,8 +171,7 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
@@ -114,7 +180,8 @@ class ReservationServiceTest {
         savedReservation.setId(new ObjectId());
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList());
+        when(reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(any(), any(), any(), any())).thenReturn(
+            Arrays.asList());
         when(reservationRepository.save(reservation)).thenReturn(savedReservation);
 
         // When
@@ -123,6 +190,7 @@ class ReservationServiceTest {
         // Then
         assertNotNull(result);
         assertNotNull(result.getId());
+        assertThat(result).isEqualTo(savedReservation);
         verify(restaurantService).getRestaurantById(restaurantId);
         verify(reservationRepository).save(reservation);
     }
@@ -153,8 +221,7 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = createTestRestaurant();
 
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
 
@@ -167,6 +234,53 @@ class ReservationServiceTest {
     }
 
     @Test
+    void createReservation_WhenOutsideSameDayOperatingHours_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 30, 9, 0)); // Before opening time
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+
+        Restaurant restaurant = createTestRestaurant();
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        // When
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(reservation));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenOutsideOvernightOperatingHours_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+        Reservation reservation = createTestReservation("customer@example.com", 4);
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 31, 3, 0)); // After closing time
+        reservation.setRestaurantId(restaurantId);
+        reservation.setSpaceId(spaceId);
+
+        Restaurant restaurant = createTestRestaurant();
+        restaurant.setEndTime(LocalTime.of(2, 0)); // Overnight hours
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        // When
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // Then
+        assertThrows(InvalidReservationException.class, () -> reservationService.createReservation(reservation));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
     void createReservation_WhenPartySizeBelowMinCapacity_ShouldThrowException() {
         // Given
         ObjectId restaurantId = new ObjectId();
@@ -175,18 +289,16 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = createTestRestaurant();
         Space space = new Space("Test Space", 2, 8); // Min capacity is 2
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
+        // When
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
 
-        // When & Then
-        assertThrows(InvalidPartySizeException.class, () -> {
-            reservationService.createReservation(reservation);
-        });
+        // Then
+        assertThrows(ReservationConflictException.class, () -> reservationService.createReservation(reservation));
         verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
@@ -199,57 +311,129 @@ class ReservationServiceTest {
         reservation.setRestaurantId(restaurantId);
         reservation.setSpaceId(spaceId);
 
-        Restaurant restaurant = new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Restaurant restaurant = createTestRestaurant();
         Space space = new Space("Test Space", 2, 8); // Max capacity is 8
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
+        // When
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
 
-        // When & Then
-        assertThrows(InvalidPartySizeException.class, () -> {
-            reservationService.createReservation(reservation);
-        });
+        // Then
+        assertThrows(ReservationConflictException.class, () -> reservationService.createReservation(reservation));
         verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
     @Test
-    void createReservation_WhenOverlappingReservationExists_ShouldThrowException() {
+    void createReservation_WhenConcurrentReservationsExceedMaxExists_ShouldThrowException() {
         // Given
         ObjectId restaurantId = new ObjectId();
         UUID spaceId = UUID.randomUUID();
 
-        LocalDateTime startTime = LocalDateTime.now().plusDays(1);
-        LocalDateTime endTime = startTime.plusHours(2);
-
-        Reservation newReservation = createTestReservation("customer@example.com", 4);
+        Reservation newReservation = createTestReservation("customer@example.com", 6);
         newReservation.setRestaurantId(restaurantId);
         newReservation.setSpaceId(spaceId);
-        newReservation.setStartTime(startTime);
-        newReservation.setEndTime(endTime);
 
-        // Existing overlapping reservation
-        Reservation existingReservation = createTestReservation("other@example.com", 2);
-        existingReservation.setRestaurantId(restaurantId);
-        existingReservation.setSpaceId(spaceId);
-        existingReservation.setStartTime(startTime.minusMinutes(30));
-        existingReservation.setEndTime(endTime.minusMinutes(30));
+        // Existing reservation
+        Reservation existingReservation1 = createTestReservation("other@example.com", 2);
+        existingReservation1.setRestaurantId(restaurantId);
+        existingReservation1.setSpaceId(spaceId);
+        existingReservation1.setStartTime(newReservation.getStartTime().plusMinutes(30));
+        existingReservation1.setEndTime(newReservation.getEndTime().plusMinutes(30));
 
-        Restaurant restaurant = new Restaurant(
-            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
+        Reservation existingReservation2 = createTestReservation("other@example.com", 2);
+        existingReservation2.setRestaurantId(restaurantId);
+        existingReservation2.setSpaceId(spaceId);
+        existingReservation2.setStartTime(newReservation.getStartTime().minusMinutes(30));
+        existingReservation2.setEndTime(newReservation.getEndTime().minusMinutes(30));
+
+        Restaurant restaurant = createTestRestaurant();
         Space space = new Space("Test Space", 2, 8);
         space.setId(spaceId);
         restaurant.setSpaces(List.of(space));
 
+        // When
         when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList(existingReservation));
+        when(reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(any(), any(), any(), any())).thenReturn(
+            Arrays.asList(existingReservation1, existingReservation2));
 
-        // When & Then
-        assertThrows(ReservationConflictException.class, () -> {
-            reservationService.createReservation(newReservation);
-        });
+        // Then
+        assertThrows(ReservationConflictException.class, () -> reservationService.createReservation(newReservation));
         verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenNewReservationExceedsMinExists_ShouldThrowException() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation newReservation = createTestReservation("customer@example.com", 1);
+        newReservation.setRestaurantId(restaurantId);
+        newReservation.setSpaceId(spaceId);
+
+        // Existing reservation
+        Reservation existingReservation = createTestReservation("other@example.com", 6);
+        existingReservation.setRestaurantId(restaurantId);
+        existingReservation.setSpaceId(spaceId);
+        existingReservation.setStartTime(newReservation.getStartTime().minusMinutes(30));
+        existingReservation.setEndTime(newReservation.getEndTime().minusMinutes(30));
+
+        Restaurant restaurant = createTestRestaurant();
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        // When
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(any(), any(), any(), any())).thenReturn(
+            Arrays.asList(existingReservation));
+
+        // Then
+        assertThrows(ReservationConflictException.class, () -> reservationService.createReservation(newReservation));
+        verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    void createReservation_WhenConcurrentReservationsExist_ShouldReturnSavedReservation() {
+        // Given
+        ObjectId restaurantId = new ObjectId();
+        UUID spaceId = UUID.randomUUID();
+
+        Reservation newReservation = createTestReservation("customer@example.com", 2);
+        newReservation.setRestaurantId(restaurantId);
+        newReservation.setSpaceId(spaceId);
+
+        // Existing reservation
+        Reservation existingReservation = createTestReservation("other@example.com", 4);
+        existingReservation.setRestaurantId(restaurantId);
+        existingReservation.setSpaceId(spaceId);
+        existingReservation.setStartTime(newReservation.getStartTime().minusMinutes(30));
+        existingReservation.setEndTime(newReservation.getEndTime().minusMinutes(30));
+
+        Restaurant restaurant = createTestRestaurant();
+        Space space = new Space("Test Space", 2, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+
+        Reservation savedReservation = createTestReservation("customer@example.com", 2);
+        savedReservation.setId(new ObjectId());
+
+        // When
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(any(), any(), any(), any())).thenReturn(
+            Arrays.asList(existingReservation));
+        when(reservationRepository.save(newReservation)).thenReturn(savedReservation);
+
+        // When
+        Reservation result = reservationService.createReservation(newReservation);
+
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.getId());
+        assertThat(result).isEqualTo(savedReservation);
+        verify(restaurantService).getRestaurantById(restaurantId);
+        verify(reservationRepository).save(newReservation);
     }
 
     @Test
@@ -309,8 +493,7 @@ class ReservationServiceTest {
 
         // Then
         assertEquals(2, result.size());
-        assertEquals("customer1@example.com", result.get(0).getCustomerEmail());
-        assertEquals("customer3@example.com", result.get(1).getCustomerEmail());
+        assertThat(result).containsExactlyInAnyOrder(reservation1, reservation3);
         verify(reservationRepository).findAll();
     }
 
@@ -342,8 +525,7 @@ class ReservationServiceTest {
 
         // Then
         assertEquals(2, result.size());
-        assertEquals("customer1@example.com", result.get(0).getCustomerEmail());
-        assertEquals("customer3@example.com", result.get(1).getCustomerEmail());
+        assertThat(result).containsExactlyInAnyOrder(reservation1, reservation3);
         verify(reservationRepository).findAll();
     }
 
@@ -353,9 +535,14 @@ class ReservationServiceTest {
         reservation.setPartySize(partySize);
         reservation.setRestaurantId(new ObjectId());
         reservation.setSpaceId(UUID.randomUUID());
-        reservation.setStartTime(LocalDateTime.now().plusDays(1));
-        reservation.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
+        reservation.setStartTime(LocalDateTime.of(2026, 1, 30, 19, 0));
+        reservation.setEndTime(LocalDateTime.of(2026, 1, 30, 22, 0));
         reservation.setStatus("CONFIRMED");
         return reservation;
+    }
+
+    private Restaurant createTestRestaurant() {
+        return new Restaurant(
+            "Test Restaurant", "Address", "Cuisine", 50, LocalTime.of(11, 0), LocalTime.of(23, 0));
     }
 }

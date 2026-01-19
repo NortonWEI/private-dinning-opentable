@@ -12,11 +12,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opentable.privatedining.dto.ReservationDTO;
 import com.opentable.privatedining.exception.GlobalExceptionHandler;
-import com.opentable.privatedining.exception.InvalidPartySizeException;
+import com.opentable.privatedining.exception.InvalidReservationException;
 import com.opentable.privatedining.mapper.ReservationMapper;
 import com.opentable.privatedining.model.Reservation;
 import com.opentable.privatedining.service.ReservationService;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -132,14 +133,33 @@ class ReservationControllerTest {
     }
 
     @Test
-    void createReservation_WhenInvalidPartySize_ShouldReturn400() throws Exception {
+    void createReservation_WhenInvalidReservation_ShouldReturn400() throws Exception {
         // Given
         ReservationDTO inputReservationDTO = createTestReservationDTO("invalid@example.com", 4);
         Reservation reservation = createTestReservation("invalid@example.com", 4);
 
         when(reservationMapper.toModel(any(ReservationDTO.class))).thenReturn(reservation);
         when(reservationService.createReservation(any(Reservation.class))).thenThrow(
-            new InvalidPartySizeException(4, 2, 3));
+            new InvalidReservationException(LocalTime.of(6, 0), LocalTime.of(22, 0),
+                LocalDateTime.of(2026, 1, 30, 10, 0), LocalDateTime.of(2026, 1, 30, 8, 0)));
+
+        // When & Then
+        mockMvc.perform(post("/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(inputReservationDTO)))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createReservation_WhenConflictReservation_ShouldReturn400() throws Exception {
+        // Given
+        ReservationDTO inputReservationDTO = createTestReservationDTO("invalid@example.com", 4);
+        Reservation reservation = createTestReservation("invalid@example.com", 4);
+
+        when(reservationMapper.toModel(any(ReservationDTO.class))).thenReturn(reservation);
+        when(reservationService.createReservation(any(Reservation.class))).thenThrow(
+            new InvalidReservationException(LocalTime.of(6, 0), LocalTime.of(22, 0),
+                LocalDateTime.of(2026, 1, 30, 10, 0), LocalDateTime.of(2026, 1, 30, 12, 0)));
 
         // When & Then
         mockMvc.perform(post("/v1/reservations")
