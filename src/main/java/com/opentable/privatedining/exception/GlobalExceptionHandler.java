@@ -51,6 +51,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(InvalidReportingException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidReporting(
+        InvalidReportingException ex, WebRequest request) {
+        logger.warn("Invalid Reporting: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
         IllegalArgumentException ex, WebRequest request) {

@@ -15,4 +15,7 @@ public interface ReservationRepository extends MongoRepository<Reservation, Obje
     @Query("{ 'restaurantId': ?0, 'spaceId': ?1, 'startTime': { $lt: ?3 }, 'endTime': { $gt: ?2 } }")
     List<Reservation> findByRestaurantIdAndSpaceIdAndOverlap(ObjectId restaurantId, UUID spaceId,
         LocalDateTime from, LocalDateTime to);
+
+    @Query("{ 'restaurantId': ?0, 'startTime': { $lt: ?2 }, 'endTime': { $gt: ?1 } }")
+    List<Reservation> findByRestaurantIdAndOverlap(ObjectId restaurantId, LocalDateTime from, LocalDateTime to);
 }

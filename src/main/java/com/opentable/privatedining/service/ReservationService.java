@@ -51,8 +51,8 @@ public class ReservationService {
         }
 
         // Check if the reservation time is in a blocked period (currently only full and half-hour blocks allowed)
-        if (reservation.getStartTime().getMinute() % Constant.BLOCK_INTERVAL_MIN
-            != 0 || reservation.getEndTime().getMinute() % Constant.BLOCK_INTERVAL_MIN != 0) {
+        if (reservation.getStartTime().getMinute() % Constant.BLOCK_INTERVAL
+            != 0 || reservation.getEndTime().getMinute() % Constant.BLOCK_INTERVAL != 0) {
             throw new InvalidReservationException("Reservation times must be on the hour or half-hour.");
         }
 
@@ -88,10 +88,20 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    public List<Reservation> getReservationByRestaurantAndSpaceAndOverlap(ObjectId restaurantId, UUID spaceId,
+        LocalDateTime startTime, LocalDateTime endTime) {
+        return reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(restaurantId, spaceId, startTime, endTime);
+    }
+
+    public List<Reservation> getReservationByRestaurantAndOverlap(ObjectId restaurantId, LocalDateTime startTime,
+        LocalDateTime endTime) {
+        return reservationRepository.findByRestaurantIdAndOverlap(restaurantId, startTime, endTime);
+    }
+
     private boolean isValidConcurrentReservation(ObjectId restaurantId, UUID spaceId, int spaceMinCapacity,
         int spaceMaxCapacity, LocalDateTime startTime, LocalDateTime endTime, int partySize) {
-        List<Reservation> reservations = reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(
-            restaurantId, spaceId, startTime, endTime);
+        List<Reservation> reservations = getReservationByRestaurantAndSpaceAndOverlap(restaurantId, spaceId, startTime,
+            endTime);
 
         if (reservations.isEmpty()) {
             // no overlapping reservations found
@@ -103,13 +113,13 @@ public class ReservationService {
 
         // currently the time slots are blocked in half-hour increments
         long minuteInterval = Duration.between(startTime, endTime).toMinutes();
-        if (minuteInterval % Constant.BLOCK_INTERVAL_MIN != 0) {
+        if (minuteInterval % Constant.BLOCK_INTERVAL != 0) {
             // this should never happen due to earlier validation and our assumption, but just in case
             throw new InvalidReservationException("Reservation times must be in half-hour increments.");
         }
-        for (int i = 0; i < (int) (minuteInterval / Constant.BLOCK_INTERVAL_MIN); i++) {
-            LocalDateTime slotStart = startTime.plusMinutes((long) i * Constant.BLOCK_INTERVAL_MIN);
-            LocalDateTime slotEnd = slotStart.plusMinutes(Constant.BLOCK_INTERVAL_MIN);
+        for (int i = 0; i < (int) (minuteInterval / Constant.BLOCK_INTERVAL); i++) {
+            LocalDateTime slotStart = startTime.plusMinutes((long) i * Constant.BLOCK_INTERVAL);
+            LocalDateTime slotEnd = slotStart.plusMinutes(Constant.BLOCK_INTERVAL);
             List<Reservation> slotRes = reservations.stream()
                 .filter(res -> res.getStartTime().isBefore(slotEnd) && res.getEndTime().isAfter(slotStart)).toList();
             int proposedPartySize = slotRes.stream().mapToInt(Reservation::getPartySize).sum() + partySize;
