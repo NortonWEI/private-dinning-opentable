@@ -65,6 +65,13 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request parameters", request);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalState(
+        IllegalStateException ex, WebRequest request) {
+        logger.error("Illegal state: {}", ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Illegal server state", request);
+    }
+
     private ResponseEntity<Map<String, Object>> buildErrorResponse(
         HttpStatus status, String message, WebRequest request) {
         Map<String, Object> errorDetails = new HashMap<>();

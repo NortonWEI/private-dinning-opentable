@@ -15,7 +15,10 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import org.bson.types.ObjectId;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,6 +27,9 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
 
     private final RestaurantService restaurantService;
+
+    // single-JVM safety lock
+    private final ConcurrentHashMap<UUID, ReentrantLock> spaceLocks = new ConcurrentHashMap<>();
 
     public ReservationService(ReservationRepository reservationRepository, RestaurantService restaurantService) {
         this.reservationRepository = reservationRepository;
@@ -39,9 +45,44 @@ public class ReservationService {
     }
 
     public Reservation createReservation(Reservation reservation) {
+        // make sure space id is valid to obtain a lock key
+        UUID spaceId = reservation.getSpaceId();
         validate(reservation);
 
-        return reservationRepository.save(reservation);
+        // Assume space ids are unique across restaurants
+        ReentrantLock lock = spaceLocks.computeIfAbsent(spaceId, k -> new ReentrantLock());
+        lock.lock();
+
+        try {
+            final int maxRetryAttempts = 3;
+            final long baseDelayMs = 50L;
+            // retry loop for optimistic locking using @Version
+            for (int attempt = 0; attempt < maxRetryAttempts; attempt++) {
+                // fetch latest data from DB in each attempt
+                validate(reservation);
+
+                try {
+                    return reservationRepository.save(reservation);
+                } catch (OptimisticLockingFailureException e) {
+                    if (attempt == maxRetryAttempts - 1) {
+                        // retry exhausted
+                        throw e;
+                    }
+                    try {
+                        Thread.sleep(baseDelayMs * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Thread interrupted during retry delay.", ie);
+                    }
+                }
+            }
+
+            throw new IllegalStateException("Failed to create reservation after multiple attempts.");
+        } finally {
+            lock.unlock();
+            // clean up the lock if no longer needed
+            spaceLocks.computeIfPresent(spaceId, (k, v) -> v.isLocked() || v.hasQueuedThreads() ? v : null);
+        }
     }
 
     private void validate(Reservation reservation) {

@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "reservations")
@@ -22,6 +23,9 @@ public class Reservation {
     private LocalDateTime endTime;
     private Integer partySize;
     private String status;
+
+    @Version
+    private Long version;
 
     public Reservation() {
     }
