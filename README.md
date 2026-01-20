@@ -18,6 +18,7 @@ This project enhances the Private Dining Reservation API by introducing:
 - All space IDs and restaurant IDs are unique across the system
 - The `capacity` of a restaurant is not used in this project, whilst only the sum of the max capacity of all spaces in a restaurants are calculated as its capacity of private dining in the occupancy report
 - The standard date & time format of the system is *dd-MM-yyyy HH:mm:ss*
+- Reservations and reports are only allowed to be requested in half-hour increments (e.g. 10:00, 10:30, 11:00, etc.)
 
 ## High-Level Design
 
@@ -25,7 +26,7 @@ See: *docs/design.md*
 
 ## Design Decisions
 
-- Business rules are evaluated in local time and persisted in UTC. See: *docs/adr/utc-time-handling.md*
+- Business rules are evaluated in local date time and persisted in UTC. Restaurant operating hours are evaluated in local time and persisted in String. See: *docs/adr/utc-time-handling.md*
 - Availability is calculated using fixed time-block slots. See: *docs/adr/fixed-time-slots.md*
 - Multiple overlapping reservations are allowed as long as capacity constraints are respected. See: *docs/adr/flexible-capacity-management.md*
 - MongoDB is adopted in the system. See: *docs/adr/db.md*
@@ -114,6 +115,7 @@ All added/updated codes are well-tested with sufficient test cases. Current line
 - Flexible operating hours
 - Space-wise operating hours
 - Customisable occupancy report request granularity (currently a fixed 30-minute slot may be too small for a large time range)
+- Observability improvements (e.g. metrics, tracing exporters)
 
 ## AI Tooling Disclosure
 
