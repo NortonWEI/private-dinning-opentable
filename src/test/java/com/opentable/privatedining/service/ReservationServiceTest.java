@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -436,6 +443,92 @@ class ReservationServiceTest {
         assertThat(result).isEqualTo(savedReservation);
         verify(restaurantService).getRestaurantById(restaurantId);
         verify(reservationRepository).save(newReservation);
+    }
+
+    @Test
+    void createReservation_concurrentReservations_NoConcurrentExecution() throws Exception {
+        UUID spaceId = UUID.randomUUID();
+        ObjectId restaurantId = new ObjectId();
+
+        // Prepare two reservations that target the same space and valid times
+        Reservation r1 = TestDataHelper.createTestReservation("a@example.com", 2);
+        r1.setRestaurantId(restaurantId);
+        r1.setSpaceId(spaceId);
+
+        Reservation r2 = TestDataHelper.createTestReservation("b@example.com", 2);
+        r2.setRestaurantId(restaurantId);
+        r2.setSpaceId(spaceId);
+
+        // Provide restaurant and space metadata used by validation
+        Restaurant restaurant = TestDataHelper.createTestRestaurant();
+        Space space = new Space("Test Space", 1, 8);
+        space.setId(spaceId);
+        restaurant.setSpaces(List.of(space));
+        when(restaurantService.getRestaurantById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // No overlapping reservations
+        when(reservationRepository.findByRestaurantIdAndSpaceIdAndOverlap(any(), any(), any(), any()))
+            .thenReturn(List.of());
+
+        // Track concurrent saves
+        AtomicInteger activeSaves = new AtomicInteger(0);
+        AtomicBoolean concurrencyDetected = new AtomicBoolean(false);
+
+        when(reservationRepository.save(any())).thenAnswer(invocation -> {
+            int concurrent = activeSaves.incrementAndGet();
+            if (concurrent > 1) {
+                concurrencyDetected.set(true);
+            }
+            // hold the save for a short time to amplify potential overlap
+            try {
+                Thread.sleep(200);
+            } finally {
+                activeSaves.decrementAndGet();
+            }
+            Reservation arg = invocation.getArgument(0);
+            arg.setId(new ObjectId());
+            return arg;
+        });
+
+        // Start two threads and attempt to create reservations at the same time
+        ExecutorService exec = Executors.newFixedThreadPool(2);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(2);
+
+        exec.submit(() -> {
+            try {
+                startLatch.await();
+                reservationService.createReservation(r1);
+            } catch (Exception e) {
+                // propagate test failure via concurrencyDetected (optional)
+                concurrencyDetected.set(true);
+            } finally {
+                doneLatch.countDown();
+            }
+        });
+
+        exec.submit(() -> {
+            try {
+                startLatch.await();
+                reservationService.createReservation(r2);
+            } catch (Exception e) {
+                concurrencyDetected.set(true);
+            } finally {
+                doneLatch.countDown();
+            }
+        });
+
+        // release both threads simultaneously
+        startLatch.countDown();
+
+        // wait for completion
+        doneLatch.await(5, TimeUnit.SECONDS);
+        exec.shutdownNow();
+
+        // ensure that saves never overlapped -> lock worked
+        assertFalse(concurrencyDetected.get(), "Concurrent save detected: ReentrantLock did not serialize access");
+
+        verify(reservationRepository, times(2)).save(any());
     }
 
     @Test

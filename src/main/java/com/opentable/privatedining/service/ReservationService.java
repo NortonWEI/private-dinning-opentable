@@ -47,7 +47,10 @@ public class ReservationService {
     public Reservation createReservation(Reservation reservation) {
         // make sure space id is valid to obtain a lock key
         UUID spaceId = reservation.getSpaceId();
-        validate(reservation);
+        if (spaceId == null) {
+            // throw early if space id is null
+            validate(reservation);
+        }
 
         // Assume space ids are unique across restaurants
         ReentrantLock lock = spaceLocks.computeIfAbsent(spaceId, k -> new ReentrantLock());
