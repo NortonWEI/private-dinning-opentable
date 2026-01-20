@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.bson.types.ObjectId;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ReservationService {
@@ -59,13 +60,11 @@ public class ReservationService {
         try {
             final int maxRetryAttempts = 3;
             final long baseDelayMs = 50L;
-            // retry loop for optimistic locking using @Version
+            // retry loop for optimistic locking using @Version across the entire DB
             for (int attempt = 0; attempt < maxRetryAttempts; attempt++) {
-                // fetch latest data from DB in each attempt
-                validate(reservation);
-
                 try {
-                    return reservationRepository.save(reservation);
+                    // fetch latest data from DB in each attempt
+                    return saveWithValidation(reservation);
                 } catch (OptimisticLockingFailureException e) {
                     if (attempt == maxRetryAttempts - 1) {
                         // retry exhausted
@@ -86,6 +85,12 @@ public class ReservationService {
             // clean up the lock if no longer needed
             spaceLocks.computeIfPresent(spaceId, (k, v) -> v.isLocked() || v.hasQueuedThreads() ? v : null);
         }
+    }
+
+    @Transactional
+    private Reservation saveWithValidation(Reservation reservation) {
+        validate(reservation);
+        return reservationRepository.save(reservation);
     }
 
     private void validate(Reservation reservation) {
@@ -209,6 +214,7 @@ public class ReservationService {
         }
     }
 
+    @Transactional
     public boolean deleteReservation(ObjectId id) {
         Optional<Reservation> existingReservation = reservationRepository.findById(id);
         if (existingReservation.isPresent()) {

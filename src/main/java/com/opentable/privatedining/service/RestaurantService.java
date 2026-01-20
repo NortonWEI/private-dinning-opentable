@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RestaurantService {
@@ -30,6 +31,7 @@ public class RestaurantService {
         return restaurantRepository.save(restaurant);
     }
 
+    @Transactional
     public Optional<Restaurant> updateRestaurant(ObjectId id, Restaurant restaurant) {
         Optional<Restaurant> existingRestaurant = restaurantRepository.findById(id);
         if (existingRestaurant.isPresent()) {
@@ -39,6 +41,7 @@ public class RestaurantService {
         return Optional.empty();
     }
 
+    @Transactional
     public boolean deleteRestaurant(ObjectId id) {
         Optional<Restaurant> existingRestaurant = restaurantRepository.findById(id);
         if (existingRestaurant.isPresent()) {
@@ -48,6 +51,7 @@ public class RestaurantService {
         return false;
     }
 
+    @Transactional
     public Optional<Restaurant> addSpaceToRestaurant(ObjectId restaurantId, Space space) {
         Optional<Restaurant> restaurantOpt = restaurantRepository.findById(restaurantId);
         if (restaurantOpt.isPresent()) {
@@ -58,6 +62,7 @@ public class RestaurantService {
         return Optional.empty();
     }
 
+    @Transactional
     public Optional<Restaurant> removeSpaceFromRestaurant(ObjectId restaurantId, UUID spaceId) {
         Optional<Restaurant> restaurantOpt = restaurantRepository.findById(restaurantId);
         if (restaurantOpt.isPresent()) {
