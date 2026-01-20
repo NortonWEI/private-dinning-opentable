@@ -39,6 +39,20 @@ public class ReservationService {
     }
 
     public Reservation createReservation(Reservation reservation) {
+        validate(reservation);
+
+        return reservationRepository.save(reservation);
+    }
+
+    private void validate(Reservation reservation) {
+        // null checks
+        if (reservation.getRestaurantId() == null || reservation.getSpaceId() == null
+            || reservation.getStartTime() == null || reservation.getEndTime() == null
+            || reservation.getPartySize() == null || reservation.getStatus() == null
+            || reservation.getCustomerEmail() == null) {
+            throw new InvalidReservationException("Required parameters cannot be null.");
+        }
+
         // Basic validations
         if (!reservation.getStartTime().isAfter(LocalDateTime.now())) {
             throw new InvalidReservationException("Reservation must start in the future.");
@@ -57,7 +71,7 @@ public class ReservationService {
         }
 
         // Validate that the restaurant exists
-        Optional<com.opentable.privatedining.model.Restaurant> restaurantOpt =
+        Optional<Restaurant> restaurantOpt =
             restaurantService.getRestaurantById(reservation.getRestaurantId());
         if (restaurantOpt.isEmpty()) {
             throw new RestaurantNotFoundException(reservation.getRestaurantId());
@@ -84,8 +98,6 @@ public class ReservationService {
                 reservation.getStartTime(), reservation.getEndTime(), space.getMinCapacity(), space.getMaxCapacity(),
                 reservation.getPartySize(), reservation.getStartTime());
         }
-
-        return reservationRepository.save(reservation);
     }
 
     public List<Reservation> getReservationByRestaurantAndSpaceAndOverlap(ObjectId restaurantId, UUID spaceId,
