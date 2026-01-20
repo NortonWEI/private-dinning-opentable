@@ -26,12 +26,24 @@ See: *docs/design.md*
 
 ## Design Decisions
 
-- Business rules are evaluated in local date time and persisted in UTC. Restaurant operating hours are evaluated in local time and persisted in String. See: *docs/adr/utc-time-handling.md*
-- Availability is calculated using fixed time-block slots. See: *docs/adr/fixed-time-slots.md*
-- Multiple overlapping reservations are allowed as long as capacity constraints are respected. See: *docs/adr/flexible-capacity-management.md*
-- MongoDB is adopted in the system. See: *docs/adr/db.md*
-- Optimistic MongoDB locks and `ReentrantLock`s are adopted to handle inter- & intra-JVMs concurrency. See: *docs/adr/concurrency.md*
-- A space-wise occupancy report will be returned if a valid space ID is provided, while a restaurant-wise overall report will be returned otherwise. See: *docs/adr/occupancy-reporting.md*
+- Business rules are evaluated in local date time and persisted in UTC. Restaurant operating hours are evaluated in local time and persisted in String. 
+  - See: *docs/adr/utc-time-handling.md*
+
+- Availability is calculated using fixed time-block slots. 
+  - See: *docs/adr/fixed-time-slots.md*
+
+- Multiple overlapping reservations are allowed as long as capacity constraints are respected. 
+  - See: *docs/adr/flexible-capacity-management.md*
+
+- MongoDB is adopted in the system. 
+  - See: *docs/adr/db.md*
+
+- Optimistic MongoDB locks and `ReentrantLock`s are adopted to handle inter- & intra-JVMs concurrency. 
+  - See: *docs/adr/concurrency.md*
+
+- A space-wise occupancy report will be returned if a valid space ID is provided, while a restaurant-wise overall report will be returned otherwise. 
+  - See: *docs/adr/occupancy-reporting.md*
+
 
 ## API Overview
 
